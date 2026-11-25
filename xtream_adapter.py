@@ -105,22 +105,15 @@ def login(base, username, password):
     # Conexão Xtream Codes NÃO emite token de sessão (como acontece no DRM).
     # A "credencial" do pirata aqui é o próprio usuário+senha exposto na URL.
 
-    # Conta os canais/filmes/séries reais do painel (para o login já
-    # mostrar "Canais" preenchido, igual o pirata vê ao autenticar).
-    live_count = vod_count = series_count = 0
+    # Conta APENAS os canais ao vivo no login (rápido). VOD/séries podem ser
+    # listas enormes (dezenas de milhares) e travaria a autenticação — ficam
+    # para a aba "Canais & DRM".
+    live_count = 0
     try:
         live = get_live_streams(base, username, password)
         live_count = len(live) if isinstance(live, list) else 0
     except Exception:
         live_count = 0
-    try:
-        vod_count = len(get_vod_streams(base, username, password) or [])
-    except Exception:
-        vod_count = 0
-    try:
-        series_count = len(get_series(base, username, password) or [])
-    except Exception:
-        series_count = 0
 
     playlist = m3u_url(base, username, password)
 
@@ -139,7 +132,7 @@ def login(base, username, password):
         "current_devices": active,
         "max_devices": max_conn,
         "channels_count": live_count,
-        "channels_available": f"{live_count} canais · {vod_count} filmes · {series_count} séries",
+        "channels_available": f"{live_count} canais ao vivo",
         "playlist": playlist,
         "captured": False,
         "message": "Autenticado no painel Xtream Codes (protocolo player_api.php). Credencial exposta na URL — sem token de sessão.",
@@ -158,6 +151,36 @@ def get_live_streams(base, username, password):
         return r.json() if r.status_code == 200 else []
     except Exception:
         return []
+
+
+def get_live_categories(base, username, password):
+    """Lista as categorias de canais ao vivo (id -> nome)."""
+    base = (base or "").strip().rstrip("/")
+    try:
+        r = requests.get(
+            _url(base, username=username, password=password,
+                 action="get_live_categories"),
+            headers=UA, timeout=TIMEOUT,
+        )
+        data = r.json() if r.status_code == 200 else []
+        return {str(c.get("category_id")): c.get("category_name") or str(c.get("category_id"))
+                for c in data if isinstance(c, dict)}
+    except Exception:
+        return {}
+
+
+def _quality_from_name(name):
+    """Extrai a resolução do NOME do canal (ex.: 'SPORTV 2 SD' -> SD)."""
+    n = (name or "").upper()
+    if "4K" in n or "UHD" in n:
+        return "4K"
+    if "FHD" in n or "FULL HD" in n or "1080" in n:
+        return "FHD"
+    if "HD" in n or "720" in n:
+        return "HD"
+    if "H.265" in n or "HEVC" in n:
+        return "HEVC"
+    return "SD"
 
 
 def get_vod_streams(base, username, password):
@@ -201,22 +224,23 @@ def stream_url(base, username, password, stream_id, ext="ts"):
     return f"{base}/live/{username}/{password}/{stream_id}.{ext}"
 
 
-def map_channel(ch, username, password, base):
+def map_channel(ch, username, password, base, categories=None):
     """Converte um canal Xtream para o formato do painel (canais & DRM)."""
     sid = ch.get("stream_id", ch.get("num", "?"))
     name = ch.get("name") or f"Canal {sid}"
-    # Heurística de DRM para a demo: se o painel permite m3u8 (HLS),
-    # trata como "possível DRM" (Widevine/ClearKey); .ts direto = clear.
-    # (No Xtream real o painel não expõe o DRM; marcamos como "indeterminado"
-    # para não inventar chave.)
+    cat_id = str(ch.get("category_id") or "")
+    categories = categories or {}
+    category = categories.get(cat_id) or (ch.get("category_name") or cat_id or "—")
     return {
         "id": str(sid),
+        "cid": f"CID-{str(sid).zfill(6)}",
         "name": name,
-        "category": ch.get("category_id") or "—",
-        "quality": "HD" if str(sid).isdigit() and int(sid) % 2 == 0 else "SD",
+        "category": category,
+        "quality": _quality_from_name(name),
         "audio": "PT",
         "provider": "Painel Xtream Codes",
         "drm": "Indeterminado",
+        "kid": None,
         "kid_key": None,
         "stream_url": stream_url(base, username, password, sid),
         "m3u_link": stream_url(base, username, password, sid),

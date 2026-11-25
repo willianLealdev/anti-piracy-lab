@@ -948,7 +948,11 @@ def channels():
             live = xtream_adapter.get_live_streams(xs["base"], xs["username"], xs["password"])
         except Exception:
             live = []
-        chans = [xtream_adapter.map_channel(c, xs["username"], xs["password"], xs["base"]) for c in live]
+        try:
+            cats = xtream_adapter.get_live_categories(xs["base"], xs["username"], xs["password"])
+        except Exception:
+            cats = {}
+        chans = [xtream_adapter.map_channel(c, xs["username"], xs["password"], xs["base"], cats) for c in live]
         return jsonify({
             "total": len(chans),
             "categories": sorted({c["category"] for c in chans}),
@@ -1253,6 +1257,19 @@ def channels_m3u():
     """Gera a playlist M3U dos canais catalogados (filtros opcionais)."""
     xs = _state.get("xtream_session")
     if xs:
+        cid = (request.args.get("id") or "").strip()
+        if cid:
+            # M3U de UM canal específico (prova visual) — poucos KB.
+            live = xtream_adapter.get_live_streams(xs["base"], xs["username"], xs["password"])
+            target = next((c for c in live if str(c.get("stream_id")) == str(cid)), None)
+            name = (target or {}).get("name") or f"Canal {cid}"
+            url = xtream_adapter.stream_url(xs["base"], xs["username"], xs["password"], cid)
+            from flask import Response
+            m3u = f"#EXTM3U\n#EXTINF:-1,{name}\n{url}\n"
+            return Response(
+                m3u, mimetype="audio/x-mpegurl",
+                headers={"Content-Disposition": f'attachment; filename="{name.replace(chr(32), "_")[:60]}.m3u"'},
+            )
         from flask import redirect
         return redirect(xtream_adapter.m3u_url(xs["base"], xs["username"], xs["password"]))
     q = (request.args.get("q") or "").lower()
@@ -1567,6 +1584,10 @@ def providers_delete(pid):
 @app.route("/api/captures")
 def captures_list():
     """Lista as capturas (KID:KEY DRM simuladas + links M3U FAST) do banco."""
+    xs = _state.get("xtream_session")
+    if xs:
+        caps = _state.get("captures", [])
+        return jsonify({"captures": caps, "total": len(caps)})
     try:
         r = requests.get(f"{CORE_URL}/api/captures", timeout=3)
         payload = r.json()
@@ -1583,7 +1604,11 @@ def captures_list():
 
 @app.route("/api/captures/clear", methods=["POST", "DELETE"])
 def captures_clear():
-    """Limpa todas as capturas do servidor (DEFENSE-CORE)."""
+    """Limpa todas as capturas do servidor (DEFENSE-CORE) ou do painel (Xtream)."""
+    xs = _state.get("xtream_session")
+    if xs:
+        _state["captures"] = []
+        return jsonify({"ok": True, "cleared": True})
     try:
         r = requests.post(f"{CORE_URL}/api/captures/clear", timeout=5)
         return jsonify(r.json())
@@ -1593,8 +1618,32 @@ def captures_clear():
 
 @app.route("/api/channels/<channel_id>/capture", methods=["POST"])
 def capture_channel(channel_id):
-    """Captura um canal (DRM -> KID:KEY simulada | FAST -> link M3U) e registra alerta."""
+    """Captura um canal (DRM -> KID:KEY simulada | FAST/Xtream -> link M3U) e registra alerta."""
     data = request.get_json(silent=True) or {}
+    xs = _state.get("xtream_session")
+    if xs:
+        # Conexão Xtream: "capturar" = montar o link direto do canal (o mesmo
+        # vetor que o pirata usa) e salvar no Vault de Capturas do painel.
+        name = data.get("name") or f"Canal {channel_id}"
+        url = xtream_adapter.stream_url(xs["base"], xs["username"], xs["password"], channel_id)
+        import datetime
+        cap = {
+            "type": "fast_m3u",
+            "channel": name,
+            "provider": "Painel Xtream Codes",
+            "kid_key": None,
+            "m3u_link": url,
+            "stream_url": url,
+            "captured_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _state.setdefault("captures", []).append(cap)
+        _add_alert(
+            "RULE-003", "Stream capturado / re-streaming",
+            f"Link direto do canal '{name}' copiado do painel Xtream "
+            f"(usuario+senha expostos na URL) - vetor de redistribuição.",
+            "ALTO",
+        )
+        return jsonify({"ok": True, "capture": cap})
     base = core_for_provider(data.get("provider"))
     try:
         r = _post_json(base, f"/api/channels/{channel_id}/capture", data)

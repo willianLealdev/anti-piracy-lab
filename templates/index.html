@@ -787,10 +787,14 @@ function renderChannels(){
   }).slice(0,60);
   document.getElementById('channelsTable').innerHTML = list.map(c=>{
     const isDrm = c.drm==='Widevine L3';
-    const acao = isDrm
-      ? `<button class="btn tiny gold" onclick="capturarCanal(${c.id})">🔑 Capturar</button>`
-      : `<button class="btn tiny" onclick="capturarCanal(${c.id})">▶ Capturar</button>`;
-    return `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td class="mono">${esc(c.cid)}</td><td>${esc(c.category)}</td>
+    const url = c.stream_url || c.m3u_link || '';
+    const acao = `<div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn tiny gold" onclick="capturarCanal(${c.id})">${isDrm?'🔑 Capturar':'▶ Capturar'}</button>
+      ${url?`<button class="btn tiny" onclick='abrirPlayerUrl(${JSON.stringify(url)},${JSON.stringify(c.name)})'>▶ Player</button>`:''}
+      ${url?`<button class="btn tiny" onclick='copiarTexto(${JSON.stringify(url)})'>🔗 Copiar link</button>`:''}
+      ${url?`<button class="btn tiny" onclick='baixarM3uUnico(${JSON.stringify(url)})'>⬇ .m3u</button>`:''}
+    </div>`;
+    return `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td class="mono">${esc(c.cid||c.id)}</td><td>${esc(c.category)}</td>
     <td><span class="tag ${c.quality==='FHD'||c.quality==='4K'?'gold':'blue'}">${c.quality}</span></td>
     <td>${esc(c.audio)}</td><td>${esc(c.provider)}</td>
     <td>${isDrm?'<span class="tag red">Widevine L3</span>':'<span class="tag green">Sem DRM</span>'}</td>
