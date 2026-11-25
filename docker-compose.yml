@@ -5,8 +5,9 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://clarotv.defense-lab.net"
-      PROVIDER_FILTER: "clarotv"
+      PUBLIC_URL: "http://173.249.14.170:8080"
+    ports:
+      - "8080:8080"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
