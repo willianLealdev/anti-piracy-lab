@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://primevideo.defense-lab.net"
-      PROVIDER_FILTER: "primevideo"
+      PUBLIC_URL: "http://plutotv.defense-lab.net"
+      PROVIDER_FILTER: "plutotv"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
