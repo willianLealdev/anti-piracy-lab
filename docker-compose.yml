@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://recordplus.defense-lab.net"
-      PROVIDER_FILTER: "recordplus"
+      PUBLIC_URL: "http://bandplay.defense-lab.net"
+      PROVIDER_FILTER: "bandplay"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
