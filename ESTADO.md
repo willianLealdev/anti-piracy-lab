@@ -56,3 +56,15 @@
 - Endpoint CLEAR no core: POST /api/captures/clear (zera data/captures.json na VPS).
 - Proxy no painel: POST /api/captures/clear + botao 'Limpar capturas do servidor' no Vault de Capturas.
 - Para zerar capturas antigas da VPS: redeployar o core (git push ja feito) e clicar no botao.
+
+## Protocolo + secao educacional (2026-11-25)
+- Backend auth_login agora retorna campo `protocol` = "DEFENSE-CORE (provedor simulado)" ou "Xtream Codes (painel IPTV)".
+- Frontend: badge "🔌 Protocolo" no resultado do login (var --blue).
+- Nova secao no menu lateral: "Educacional > 🧠 Como os piratas conectam" (sec-como, id sec-como).
+  Explica conceitualmente os 3 caminhos: painel IPTV (Xtream), app com DRM (Widevine L3), FAST (sem DRM) + onde colocar a trava.
+  NADA ofensivo executado (sem extracao real de DRM/token).
+
+## Fix deploy: hairpin NAT Docker (2026-11-25)
+- Painel dentro do container nao alcanca o proprio IP publico da VPS.
+- Solucao: usar `http://core:8080` (rede interna) OU extra_hosts host-gateway no compose (git push feito).
+- Compose na RAIZ do repo: core (8080) + painel (5050). Dominio EasyPanel deve apontar p/ servico `painel` porta 5050.

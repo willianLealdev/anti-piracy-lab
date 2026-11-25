@@ -1620,6 +1620,7 @@ def auth_login():
         if not is_core_json:
             raise RuntimeError("not_defense_core")
         payload = r.json()
+        payload["protocol"] = "DEFENSE-CORE (provedor simulado)"
         if server_override:
             payload["server"] = server_override
             if payload.get("ok"):
@@ -1636,6 +1637,7 @@ def auth_login():
                 }
                 _state["connected_provider"] = "Painel Xtream Codes"
                 payload = xt
+                payload["protocol"] = "Xtream Codes (painel IPTV)"
             else:
                 return jsonify(xt), 401
         else:
@@ -1655,6 +1657,7 @@ def auth_login():
                 }
                 _state["connected_provider"] = "Painel Xtream Codes"
                 payload = xt
+                payload["protocol"] = "Xtream Codes (painel IPTV)"
             else:
                 return jsonify(xt), 401
         else:

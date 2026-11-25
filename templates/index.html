@@ -167,6 +167,8 @@
     <h5>Defesa</h5>
     <div class="side-item" data-sec="alerts">🚨 Detecções <span class="badge" id="alertBadge">0</span></div>
     <div class="side-item" data-sec="trava">🛡️ Mapa de Travas</div>
+    <h5>Educacional</h5>
+    <div class="side-item" data-sec="como">🧠 Como os piratas conectam</div>
     <div class="side-foot">
       <span class="status-dot"></span>
       <span>DRM EXTRATOR-V10 Online</span>
@@ -472,6 +474,77 @@
       <div class="panel">
         <h3>🛡️ Mapa de Travas <span class="sub">onde o atacante age × onde colocar a defesa</span></h3>
         <div id="travaList"></div>
+      </div>
+    </section>
+
+    <!-- COMO OS PIRATAS CONECTAM (educacional/defensivo) -->
+    <section class="section" id="sec-como">
+      <div class="panel">
+        <h3>🧠 Como os piratas conectam <span class="sub">os 3 caminhos de acesso — e onde o provedor coloca a trava</span></h3>
+        <div class="muted" style="margin-bottom:16px">Tudo abaixo é <b>explicação conceitual e defensiva</b>. Nenhuma extração real de DRM ou token é executada aqui — o laboratório usa apenas dados sintéticos para demonstrar <b>onde a proteção deve existir</b>.</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px">
+
+          <div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <b style="font-size:14px">🔑 Painel IPTV</b>
+              <span class="badge">Xtream Codes</span>
+            </div>
+            <div class="muted" style="font-size:12px;margin-bottom:8px">XUI.one / Xtream UI — o painel dos <b>servidores de IPTV</b> (ex.: os painéis que você já testa no StreamGuard).</div>
+            <div style="font-size:12px;line-height:1.6">
+              <b style="color:var(--gold2)">O que o pirata precisa:</b><br>
+              usuário + senha + endereço do painel.<br><br>
+              <b style="color:var(--gold2)">Como ele conecta:</b><br>
+              1. <span class="mono">player_api.php?username=X&amp;password=Y</span> → valida<br>
+              2. <span class="mono">get.php?type=m3u_plus</span> → baixa a grade<br>
+              3. cada canal vira <span class="mono">/usuario/senha/canal.ts</span>
+            </div>
+            <div style="margin-top:12px;border-left:3px solid var(--green);background:rgba(34,197,94,.06);padding:10px;border-radius:6px;font-size:12px">
+              <b style="color:var(--green)">🛡️ Onde travar:</b> vincular sessão ao IP/dispositivo · limite de conexões + revogação · bloquear <span class="mono">get.php</span> para IPs desconhecidos · exigir chave/device extra.
+            </div>
+          </div>
+
+          <div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <b style="font-size:14px">📱 App próprio com DRM</b>
+              <span class="badge">Widevine L3</span>
+            </div>
+            <div class="muted" style="font-size:12px;margin-bottom:8px">Sky+ / GloboPlay / Disney+ / Prime Video — apps próprios com login e <b>criptografia de vídeo</b>. <b>Não</b> usam Xtream Codes.</div>
+            <div style="font-size:12px;line-height:1.6">
+              <b style="color:var(--gold2)">O que o pirata precisa:</b><br>
+              credenciais compartilhadas + um <b>CDM</b> (módulo de decriptação) do dispositivo.<br><br>
+              <b style="color:var(--gold2)">Como ele conecta (conceito):</b><br>
+              1. login → recebe <b>token</b> de sessão<br>
+              2. pede a licença do vídeo<br>
+              3. o servidor envia o conteúdo "embrulhado" + a <b>KID:KEY</b><br>
+              4. o CDM destranca o vídeo no aparelho<br>
+              5. o pirata captura a chave e <b>reusa/retransmite</b>
+            </div>
+            <div style="margin-top:12px;border-left:3px solid var(--green);background:rgba(34,197,94,.06);padding:10px;border-radius:6px;font-size:12px">
+              <b style="color:var(--green)">🛡️ Onde travar:</b> amarrar a licença ao <b>hardware/certificado</b> (não só ao app) · rotação curta de chaves · detectar 2 países ao mesmo tempo · <b>watermark</b>/fingerprint no vídeo.
+            </div>
+          </div>
+
+          <div style="background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <b style="font-size:14px">📡 FAST (grátis)</b>
+              <span class="badge">Sem DRM</span>
+            </div>
+            <div class="muted" style="font-size:12px;margin-bottom:8px">Pluto TV / Soul TV / YouTube — conteúdo gratuito, stream <b>sem criptografia</b>.</div>
+            <div style="font-size:12px;line-height:1.6">
+              <b style="color:var(--gold2)">O que o pirata precisa:</b><br>
+              quase nada (ou uma conta gratuita) — o stream já é público.<br><br>
+              <b style="color:var(--gold2)">Como ele conecta:</b><br>
+              1. abre o canal no site/app<br>
+              2. captura a URL <span class="mono">.m3u8</span> na aba de rede<br>
+              3. reproduz no VLC/XUI <b>sem senha</b>
+            </div>
+            <div style="margin-top:12px;border-left:3px solid var(--amber);background:rgba(245,158,11,.06);padding:10px;border-radius:6px;font-size:12px">
+              <b style="color:var(--amber)">🛡️ Onde travar:</b> token/timestamp na URL (expira em segundos) · verificar referer/origin · geo-fence. Aqui o foco é <b>impedir redistribuição em massa</b>, já que o conteúdo é gratuito.
+            </div>
+          </div>
+
+        </div>
+        <div class="muted" style="margin-top:14px;font-size:12px">💡 <b>Por que o painel tem adaptador Xtream Codes:</b> para demonstrar o caminho 1 contra painéis <b>autorizados</b> do cliente. Os caminhos 2 e 3 são explicados aqui (e simulados com dados sintéticos no DEFENSE-CORE), porque quebrar DRM real <b>não é feito nem demonstrado</b> — é exatamente o que o cliente precisa <b>prevenir</b>.</div>
       </div>
     </section>
   </main>
@@ -1244,6 +1317,7 @@ async function doLogin(){
       <div style="border-left:3px solid var(--green);background:var(--panel2);padding:12px;border-radius:6px">
         <div class="a1" style="color:var(--green)">✅ Login bem-sucedido</div>
         <div class="kv" style="margin-top:8px"><b>🏢 Provedor</b><span style="color:var(--gold2);font-weight:600">${esc(d.provider)}</span></div>
+        <div class="kv"><b>🔌 Protocolo</b><span style="color:var(--blue);font-weight:600">${esc(d.protocol||'DEFENSE-CORE (provedor simulado)')}</span></div>
         <div class="kv"><b>Servidor</b><span class="mono" style="word-break:break-all">${esc(d.server)}</span></div>
         <div class="kv"><b>Plano</b><span>${esc(d.plan)}</span></div>
         <div class="kv"><b>Expira</b><span>${esc(d.expiry)}</span></div>
