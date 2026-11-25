@@ -102,10 +102,8 @@ def login(base, username, password):
     max_conn = ui.get("max_connections", "?")
     active = ui.get("active_cons", "0")
 
-    # Token de sessão = hash determinístico da credencial (só para exibição
-    # no Vault na demo; não é segredo real do servidor).
-    import hashlib
-    token = hashlib.sha256(f"{base}|{username}|{password}".encode()).hexdigest()
+    # Conexão Xtream Codes NÃO emite token de sessão (como acontece no DRM).
+    # A "credencial" do pirata aqui é o próprio usuário+senha exposto na URL.
 
     # Conta os canais/filmes/séries reais do painel (para o login já
     # mostrar "Canais" preenchido, igual o pirata vê ao autenticar).
@@ -132,7 +130,8 @@ def login(base, username, password):
         "provider": "Painel Xtream Codes",
         "server": base,
         "username": username,
-        "session_token": token,
+        "session_token": None,
+        "auth_method": "credencial exposta na URL (usuario+senha)",
         "plan": f"{max_conn} conexões",
         "expires": exp_date or "N/D",
         "expiry": exp_date or "N/D",
@@ -142,9 +141,8 @@ def login(base, username, password):
         "channels_count": live_count,
         "channels_available": f"{live_count} canais · {vod_count} filmes · {series_count} séries",
         "playlist": playlist,
-        "captured": True,
-        "captured_token_id": token[:12].upper(),
-        "message": "Autenticado no painel Xtream Codes (protocolo player_api.php).",
+        "captured": False,
+        "message": "Autenticado no painel Xtream Codes (protocolo player_api.php). Credencial exposta na URL — sem token de sessão.",
     }
 
 

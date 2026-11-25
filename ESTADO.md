@@ -68,3 +68,7 @@
 - Painel dentro do container nao alcanca o proprio IP publico da VPS.
 - Solucao: usar `http://core:8080` (rede interna) OU extra_hosts host-gateway no compose (git push feito).
 - Compose na RAIZ do repo: core (8080) + painel (5050). Dominio EasyPanel deve apontar p/ servico `painel` porta 5050.
+
+
+## Estado atual
+- Login Xtream Codes agora retorna campos reais (canais/filmes/s?ries, playlist get.php, telas ativas/m?x, expira??o) e o painel recarrega canais automaticamente ap?s conectar. Auto-Flow usa dados reais do painel Xtream (n?o mais n?meros sint?ticos). Commit e9da3f6.

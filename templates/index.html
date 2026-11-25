@@ -426,11 +426,10 @@
         <h3>⚙️ Gerador de CFG</h3>
         <div class="toolbar">
           <select id="cfgClient"><option>Todos os clientes ativos</option><option>teste</option></select>
-          <label style="font-size:12px"><input type="checkbox" id="cfgSky" checked> SkyPlus</label>
-          <label style="font-size:12px"><input type="checkbox" id="cfgGlobo" checked> GloboPlay</label>
-          <label style="font-size:12px"><input type="checkbox" id="cfgRecord" checked> RecordPlus</label>
+          <span id="cfgProviders" style="font-size:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"></span>
           <button class="btn gold" onclick="gerarCfgTodos()">Gerar Todos os CFGs</button>
         </div>
+        <div class="muted" style="margin:6px 0 0;font-size:12px">Provedor conectado: <b style="color:var(--gold2)" id="cfgConnected">—</b></div>
         <div class="grid2">
           <div>
             <h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">Arquivos gerados</h4>
@@ -1089,6 +1088,17 @@ function baixarYoutubeM3u(){ baixarPainel('/api/youtube/m3u'); }
 // ===== CFG =====
 async function loadCfg(){
   const d = await get('/api/cfg');
+  const conn = document.getElementById('cfgConnected');
+  if(conn) conn.textContent = d.connected_provider || '— (sem provedor conectado)';
+  const provs = (d.known_providers && d.known_providers.length) ? d.known_providers : (d.providers||[]);
+  const box = document.getElementById('cfgProviders');
+  if(box){
+    if(provs.length){
+      box.innerHTML = provs.map((p,i)=>`<label style="font-size:12px"><input type="checkbox" class="cfgProv" value="${esc(p)}" ${i===0?'checked':''}> ${esc(p)}</label>`).join('');
+    } else {
+      box.innerHTML = '<span style="color:var(--muted)">Nenhum provedor conectado — faça login primeiro.</span>';
+    }
+  }
   document.getElementById('cfgTable').innerHTML = (d.files||[]).map(f=>`
     <tr><td class="mono">${esc(f.filename)}</td><td>${esc(f.size)}</td><td><button class="btn sm" onclick='baixarCfg("${esc(f.filename)}")'>⬇</button></td></tr>`).join('');
   document.getElementById('cfgStats').innerHTML = Object.entries(d.stats||{}).map(([k,v])=>`
@@ -1097,9 +1107,7 @@ async function loadCfg(){
 }
 async function gerarCfgTodos(){
   const provs = [];
-  if(document.getElementById('cfgSky').checked) provs.push('SkyPlus');
-  if(document.getElementById('cfgGlobo').checked) provs.push('GloboPlay');
-  if(document.getElementById('cfgRecord').checked) provs.push('RecordPlus');
+  document.querySelectorAll('.cfgProv:checked').forEach(c=>provs.push(c.value));
   if(!provs.length){ toast('Marque ao menos um provedor.'); return; }
   const client = fldId('cfgClient') || 'teste';
   toast('Gerando CFGs (simulado)...');
@@ -1323,7 +1331,7 @@ async function doLogin(){
         <div class="kv"><b>Expira</b><span>${esc(d.expiry)}</span></div>
         <div class="kv"><b>Dispositivos</b><span>${d.current_devices}/${d.max_devices} conectados · este aparelho: <span class="mono">${esc(d.device_id||device_id)}</span></span></div>
         <div class="kv"><b>Canais</b><span>${d.channels_available}</span></div>
-        <div class="kv"><b>Sessão</b><span class="mono">${esc(d.session_token)}</span></div>
+        <div class="kv"><b>Sessão</b><span class="mono">${d.session_token ? esc(d.session_token) : '— (sem token de sessão)'}</span></div>
         <div class="kv"><b>Playlist</b><span class="mono" style="word-break:break-all">${esc(d.playlist)}</span></div>
         ${d.warning?`<div class="a2" style="color:var(--amber);margin-top:8px">⚠️ ${esc(d.warning)}</div>`:''}
         ${d.captured?`<div style="color:var(--red);margin-top:10px;border:1px dashed var(--red);padding:10px;border-radius:6px;background:rgba(255,80,80,0.06)">

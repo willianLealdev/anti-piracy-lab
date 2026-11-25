@@ -980,9 +980,15 @@ def vps():
 
 @app.route("/api/cfg")
 def cfg():
+    prov = _state.get("connected_provider")
+    providers = [prov] if prov else []
+    # lista de provedores conhecidos para o select (sem expor servidor fake)
+    known = [x.get("name") for x in _get_providers()]
     return jsonify({
         "files": CFG_FILES,
-        "providers": [],
+        "providers": providers,
+        "known_providers": known,
+        "connected_provider": prov,
         "clients": [],
         "stats": {},
     })
@@ -992,7 +998,7 @@ def cfg():
 def cfg_generate():
     """Gera arquivos .cfg REAIS no disco, mas com conteúdo 100% fabricado."""
     data = request.get_json(silent=True) or {}
-    provider = data.get("provider", "SkyPlus")
+    provider = data.get("provider") or _state.get("connected_provider") or "Provedor"
     client = data.get("client", "teste")
     quality = data.get("quality", "HD_PT")
 
@@ -1719,7 +1725,8 @@ def auth_login():
     # SIMULAÇÃO DE CAPTURA: quando o login é bem-sucedido, o módulo DEFENSE
     # (agindo como o "pirata") captura o token de sessão recém-emitido e o
     # guarda no Vault — mostrando ao cliente exatamente o vetor de ataque.
-    if payload.get("ok") and payload.get("session_token"):
+    is_xtream = str(payload.get("protocol") or "").startswith("Xtream")
+    if payload.get("ok") and payload.get("session_token") and not is_xtream:
         token = payload["session_token"]
         # evita duplicar a captura do mesmo token
         if not any(t["token"] == token for t in _state["token_vault"]):
