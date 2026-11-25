@@ -80,14 +80,15 @@ RULE-006 brute force · RULE-007 token/DRM capturado · RULE-008 rotação.
 - PORT=3000 do Windows conflita → sempre definir PORT.
 - vlc:// não abre no Windows → botão baixa .m3u.
 
-## Deploy (corrigido p/ Docker/EasyPanel)
-- Dockerfile + docker-compose CORRIGIDOS: build context agora é a raiz do projeto
-  (antes o `build: .` apontava p/ deploy-vps/ e o COPY não levava app.py/core_server.py).
-- docker-compose.yml usa `build: { context: .., dockerfile: deploy-vps/Dockerfile }`.
-- Volumes adicionados: core_data, core_streams, panel_data (persistência).
-- EasyPanel: FUNCIONA (é painel Docker). Criar "Project" com o docker-compose.yml
-  (ou 2 services: core 8484 + painel 5050). Expor via reverse proxy do EasyPanel
-  (domínio próprio), sem precisar do nginx.conf.
+## Deploy (ATUAL - EasyPanel)
+- Dockerfile e docker-compose.yml ficam na RAIZ do repo (nao mais em deploy-vps/).
+- Repo GitHub publico: willianLealdev/anti-piracy-lab (branch main).
+- VPS do cliente: 173.249.14.170 (EasyPanel, projeto "servidor_tv_sky").
+- Caminho de build no EasyPanel: / | arquivo: docker-compose.yml.
+- Core porta 8484, painel porta 5050. PUBLIC_URL aponta p/ 173.249.14.170.
+- Streams sinteticos NAO vao pro Git: gerados no servidor via ffmpeg
+  (gerar_streams.py agora cross-platform; duracao 12s).
+- Volumes: core_data, core_streams, panel_data (persistencia).
 
 ## Próximos passos (aguardando)
 - Cliente vai enviar credenciais da VPS/EasyPanel.
