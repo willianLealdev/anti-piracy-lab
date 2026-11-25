@@ -744,6 +744,15 @@ def dashboard():
     except Exception:
         pass
 
+    # FILTRO POR PROVEDOR CONECTADO: painel reflete so o provedor da conexao.
+    prov = _state.get("connected_provider")
+    if prov:
+        providers = [p for p in providers if p.get("name") == prov]
+        accounts = [a for a in accounts if a.get("provider") == prov]
+    else:
+        providers = []
+        accounts = []
+
     # "Saúde & Validade dos Tokens" derivada das contas reais cadastradas no banco.
     token_health = []
     for a in accounts:
@@ -774,7 +783,7 @@ def dashboard():
         "accounts": len(accounts),
         "vps": len(CONNECTED_SERVERS),
         "youtube": len(YOUTUBE_CHANNELS),
-        "channels": len(CHANNELS),
+        "channels": len(_gen_channels_for_provider(_state.get("connected_provider"))),
     }
 
     drm_core = dict(DRM_CORE)
@@ -1422,10 +1431,19 @@ def _add_alert(rule_id, rule_name, detail, severity, account=None, ip=None, city
 
 @app.route("/api/auth/accounts")
 def auth_accounts():
-    """Lista as contas de teste simuladas do DEFENSE-CORE."""
+    """Lista as contas de teste simuladas do DEFENSE-CORE (so do provedor conectado)."""
     try:
         r = requests.get(f"{CORE_URL}/api/auth/accounts", timeout=3)
-        return jsonify(r.json())
+        payload = r.json()
+        prov = _state.get("connected_provider")
+        accs = payload.get("accounts", [])
+        if prov:
+            accs = [a for a in accs if a.get("provider") == prov]
+        else:
+            accs = []
+        payload["accounts"] = accs
+        payload["total"] = len(accs)
+        return jsonify(payload)
     except Exception:
         return jsonify({
             "accounts": [],

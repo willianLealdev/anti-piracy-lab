@@ -769,9 +769,14 @@ function abrirPlayerUrl(url, nome){
   modal.style.display = 'flex';
 }
 
-function baixarCanaisM3u(){ baixarPainel('/api/channels/m3u'); }
+function baixarCanaisM3u(){
+  if(_lastPlaylist){ baixarUrl(_lastPlaylist); return; }
+  baixarPainel('/api/channels/m3u');
+}
 function copiarLinkCanaisM3u(){
-  const q=(document.getElementById('chSearch').value||''), prov=(document.getElementById('chProvider').value||''), qual=(document.getElementById('chQuality').value||'');
+  // Copia o link M3U REAL do provedor conectado (nao o endereco local do painel).
+  if(_lastPlaylist){ copiarTexto(_lastPlaylist); return; }
+  const q=(document.getElementById('chSearch').value||'');
   const url = location.origin + '/api/channels/m3u' + (q?`?q=${encodeURIComponent(q)}`:'');
   copiarTexto(url);
 }
@@ -1207,7 +1212,7 @@ async function doLogin(){
       </div>`;
     authLogLine('Falha: ' + username + ' — ' + d.message, isHard?'err':'info');
   }
-  loadDashboard(); loadAlerts(); loadTokens();
+  loadDashboard(); loadAlerts(); loadTokens(); loadChannels(); loadCaptures(); loadStreams(); loadAuthAccounts();
 }
 
 // ===== SESSAO ATUAL (playlist do ultimo login) =====
