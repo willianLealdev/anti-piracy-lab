@@ -369,6 +369,7 @@
         <h3>🎯 Vault de Capturas <span class="sub">KID:KEY DRM (simulada) + links M3U FAST capturados automaticamente</span></h3>
         <div class="toolbar">
           <button class="btn gold" onclick="loadCaptures()">⟳ Recarregar</button>
+          <button class="btn" onclick="clearCaptures()">🧹 Limpar capturas do servidor</button>
         </div>
         <table><thead><tr><th>Canal</th><th>Provedor</th><th>Tipo</th><th>KID:KEY</th><th>Link M3U / Stream</th><th>Capturado em</th><th>Ação</th></tr></thead><tbody id="capturesBody"></tbody></table>
       </div>
@@ -741,6 +742,12 @@ async function capturarCanal(id){
 }
 
 let _captures = [];
+async function clearCaptures(){
+  if(!confirm('Limpar TODAS as capturas do servidor? Essa acao apaga KID:KEY e links M3U salvos no DEFENSE-CORE.')) return;
+  const d = await post('/api/captures/clear', {});
+  toast(d && d.ok ? 'Capturas do servidor limpas.' : (d.error || 'Falha ao limpar.'));
+  loadCaptures();
+}
 async function loadCaptures(){
   const d = await get('/api/captures');
   _captures = d.captures || [];

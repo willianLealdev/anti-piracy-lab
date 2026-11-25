@@ -1537,6 +1537,16 @@ def captures_list():
         return jsonify({"captures": [], "error": "DEFENSE-CORE offline."}), 503
 
 
+@app.route("/api/captures/clear", methods=["POST", "DELETE"])
+def captures_clear():
+    """Limpa todas as capturas do servidor (DEFENSE-CORE)."""
+    try:
+        r = requests.post(f"{CORE_URL}/api/captures/clear", timeout=5)
+        return jsonify(r.json())
+    except Exception:
+        return jsonify({"ok": False, "error": "DEFENSE-CORE offline."}), 503
+
+
 @app.route("/api/channels/<channel_id>/capture", methods=["POST"])
 def capture_channel(channel_id):
     """Captura um canal (DRM -> KID:KEY simulada | FAST -> link M3U) e registra alerta."""

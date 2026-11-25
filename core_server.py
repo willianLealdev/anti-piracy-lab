@@ -324,6 +324,15 @@ def api_captures():
     })
 
 
+@app.route("/api/captures/clear", methods=["POST", "DELETE"])
+def api_captures_clear():
+    """Limpa todas as capturas do banco (KID:KEY e links M3U)."""
+    global CAPTURES
+    CAPTURES = []
+    _save_captures(CAPTURES)
+    return jsonify({"ok": True, "total": 0, "message": "Capturas limpas do servidor."})
+
+
 @app.route("/api/channels/<channel_id>/capture", methods=["POST"])
 def api_capture_channel(channel_id):
     """Simula a captura automática de um canal:
