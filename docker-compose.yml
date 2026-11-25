@@ -1,7 +1,7 @@
 services:
   core:
     build: .
-    command: sh -c "python gerar_streams.py || true; exec python core_server.py"
+    command: python core_server.py
     environment:
       HOST: "0.0.0.0"
       PORT: "8484"
@@ -13,7 +13,7 @@ services:
 
   painel:
     build: .
-    command: sh -c "python gerar_streams.py || true; exec python app.py"
+    command: python app.py
     environment:
       HOST: "0.0.0.0"
       PORT: "5050"

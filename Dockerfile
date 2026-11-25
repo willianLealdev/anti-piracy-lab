@@ -18,8 +18,10 @@ COPY . .
 ENV HOST=0.0.0.0
 ENV PYTHONUNBUFFERED=1
 
+# Gera os streams sintéticos DURANTE O BUILD (o container sobe instantâneo).
+RUN python gerar_streams.py || true
+
 EXPOSE 5050 8484
 
-# Gera os streams sintéticos (se ainda não existirem) e sobe o servidor.
 # O comando (app.py ou core_server.py) vem do docker-compose.
-CMD ["sh", "-c", "python gerar_streams.py || true; exec python app.py"]
+CMD ["python", "app.py"]

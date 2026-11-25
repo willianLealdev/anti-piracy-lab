@@ -67,7 +67,7 @@ def gerar(canal_id, nome, resolucao):
         "ffmpeg", "-y",
         "-f", "lavfi", "-i", f"testsrc2=size={resolucao}:rate=30",
         "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=44100",
-        "-t", "12",  # 12s de stream (suficiente para demo; o VLC da loop)
+        "-t", "4",  # 4s de stream (suficiente para demo; o VLC da loop)
         "-vf", f"{draw},{draw2}",
         "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
         "-c:a", "aac", "-b:a", "96k",
