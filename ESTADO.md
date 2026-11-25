@@ -43,3 +43,8 @@
 ## Endereços
 - Painel local: http://127.0.0.1:5050 (zerado)
 - Servidor-mãe: http://173.249.14.170:8080
+
+## Limpeza de capturas (2026-11-25)
+- Endpoint CLEAR no core: POST /api/captures/clear (zera data/captures.json na VPS).
+- Proxy no painel: POST /api/captures/clear + botao 'Limpar capturas do servidor' no Vault de Capturas.
+- Para zerar capturas antigas da VPS: redeployar o core (git push ja feito) e clicar no botao.

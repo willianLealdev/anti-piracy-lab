@@ -370,8 +370,10 @@
         <div class="toolbar">
           <button class="btn gold" onclick="loadCaptures()">⟳ Recarregar</button>
           <button class="btn" onclick="clearCaptures()">🧹 Limpar capturas do servidor</button>
+          <button class="btn green" onclick="exportarCapturasM3u()">⬇ Exportar M3U (selecionadas)</button>
+          <button class="btn" onclick="selecionarTodasCapturas(true)">☑ Selecionar todas</button>
         </div>
-        <table><thead><tr><th>Canal</th><th>Provedor</th><th>Tipo</th><th>KID:KEY</th><th>Link M3U / Stream</th><th>Capturado em</th><th>Ação</th></tr></thead><tbody id="capturesBody"></tbody></table>
+        <table><thead><tr><th style="width:34px"><input type="checkbox" id="capCheckAll" onchange="selecionarTodasCapturas(this.checked)"></th><th>Canal</th><th>Provedor</th><th>Tipo</th><th>KID:KEY</th><th>Link M3U / Stream</th><th>Capturado em</th><th>Ação</th></tr></thead><tbody id="capturesBody"></tbody></table>
       </div>
     </section>
 
@@ -493,6 +495,7 @@
   <video id="playerVideo" controls autoplay style="max-width:90%;max-height:70vh;background:#000;border:1px solid var(--gold);border-radius:8px"></video>
   <div style="display:flex;gap:10px">
     <button class="btn" onclick="document.getElementById('playerModal').style.display='none';document.getElementById('playerVideo').pause();document.getElementById('playerVideo').src=''">Fechar</button>
+    <button class="btn" onclick="copiarLinkPlayer()">🔗 Copiar link</button>
     <button class="btn gold" onclick="baixarUrl(document.getElementById('playerVideo').src,'stream_simulado.m3u8')">⬇ Baixar .m3u8</button>
   </div>
 </div>
@@ -754,17 +757,57 @@ async function loadCaptures(){
   const badge = document.getElementById('capBadge');
   if(badge) badge.textContent = _captures.length;
   const el = document.getElementById('capturesBody');
+  const all = document.getElementById('capCheckAll');
+  if(all) all.checked = false;
   if(!el) return;
-  el.innerHTML = _captures.map(c=>`
+  el.innerHTML = _captures.map((c,i)=>{
+    const link = c.stream_url || c.m3u_link || '';
+    return `
     <tr>
+      <td><input type="checkbox" class="capChk" data-i="${i}" ${link?'':'disabled'}></td>
       <td>${esc(c.channel)}</td>
       <td>${esc(c.provider)}</td>
       <td>${c.type==='drm_key'?'<span class="tag red">🔑 DRM KID:KEY</span>':'<span class="tag green">▶ FAST M3U</span>'}</td>
       <td class="mono">${esc(c.kid_key||'--')}</td>
-      <td class="mono">${esc(c.stream_url||c.m3u_link||'--')}</td>
+      <td class="mono">${esc(link||'--')}</td>
       <td>${esc(c.captured_at)}</td>
-      <td><button class="btn tiny" onclick="abrirPlayerUrl('${esc(c.stream_url||c.m3u_link)}','${esc(c.channel)}')">▶ Ver</button></td>
-    </tr>`).join('') || '<tr><td colspan="7" class="muted">Nenhuma captura ainda. Clique em 🔑 Capturar em um canal.</td></tr>';
+      <td style="white-space:nowrap">
+        ${link?`<button class="btn tiny" onclick="copiarLinkCaptura('${esc(link)}')">🔗 Copiar link</button>`:''}
+        <button class="btn tiny" onclick="abrirPlayerUrl('${esc(link)}','${esc(c.channel)}')">▶ Ver</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" class="muted">Nenhuma captura ainda. Clique em 🔑 Capturar em um canal.</td></tr>';
+}
+
+function copiarLinkCaptura(url){ copiarTexto(url); }
+
+function selecionarTodasCapturas(checked){
+  document.querySelectorAll('.capChk').forEach(cb=>{ if(!cb.disabled) cb.checked = checked; });
+}
+
+function exportarCapturasM3u(){
+  const sel = [];
+  document.querySelectorAll('.capChk').forEach(cb=>{
+    if(cb.checked && !cb.disabled){
+      const c = _captures[parseInt(cb.dataset.i)];
+      if(c && (c.stream_url || c.m3u_link)) sel.push(c);
+    }
+  });
+  if(!sel.length){ toast('Selecione pelo menos uma captura com link M3U.'); return; }
+  const lines = ['#EXTM3U'];
+  sel.forEach(c=>{
+    const link = c.stream_url || c.m3u_link;
+    lines.push(`#EXTINF:-1,${c.channel} (${c.provider})`);
+    lines.push(link);
+  });
+  const content = lines.join('\n') + '\n';
+  const blob = new Blob([content], {type:'audio/x-mpegurl'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'capturas_defense_lab.m3u';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  toast(`Exportadas ${sel.length} capturas em .m3u`);
 }
 
 function abrirPlayerUrl(url, nome){
@@ -774,6 +817,12 @@ function abrirPlayerUrl(url, nome){
   video.src = url;
   document.getElementById('playerTitle').textContent = nome || 'Stream simulado';
   modal.style.display = 'flex';
+}
+
+function copiarLinkPlayer(){
+  const v = document.getElementById('playerVideo');
+  if(v && v.src){ copiarTexto(v.src); }
+  else { toast('Nenhum link no player.'); }
 }
 
 function baixarCanaisM3u(){
