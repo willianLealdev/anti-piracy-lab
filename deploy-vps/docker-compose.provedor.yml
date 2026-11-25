@@ -1,0 +1,36 @@
+# ============================================================
+# VPS DEDICADA A UM PROVEDOR SIMULADO (AntiPiracy Defense Lab)
+# ============================================================
+# Como usar:
+#   1. Copie este arquivo para a raiz do repositório como docker-compose.yml
+#   2. Troque os 2 valores abaixo (PUBLIC_URL e PROVIDER_FILTER)
+#   3. Faça o deploy no EasyPanel (ou docker compose up -d)
+#
+# PROVIDER_FILTER  -> o ID do provedor que ESTA VPS representa
+# PUBLIC_URL       -> o endereço público DESTA VPS (IP ou domínio)
+# ============================================================
+
+services:
+  core:
+    build: .
+    command: python core_server.py
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8080"
+      PROVIDER_FILTER: "TROQUE_PELO_ID_DO_PROVEDOR"
+      PUBLIC_URL: "http://TROQUE_PELO_IP_DA_VPS:8080"
+    ports:
+      - "8080:8080"
+    volumes:
+      - core_data:/app/data
+      - core_streams:/app/streams
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  core_data:
+  core_streams:

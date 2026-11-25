@@ -1,0 +1,55 @@
+services:
+  # ---------------------------------------------------------------
+  # CORE = "servidor do provedor" SIMULADO (100% sintético).
+  # Fica na rede interna do Docker; opcionalmente pode ser exposto.
+  # ---------------------------------------------------------------
+  core:
+    build:
+      context: ..
+      dockerfile: deploy-vps/Dockerfile
+    command: python core_server.py
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8484"
+    expose:
+      - "8484"
+    ports:
+      - "8484:8484"        # remover esta linha se quiser o core só interno
+    restart: unless-stopped
+    volumes:
+      - core_data:/app/data
+      - core_streams:/app/streams
+    networks:
+      - defense
+
+  # ---------------------------------------------------------------
+  # PAINEL = interface que o cliente acessa (dark mode dourado).
+  # Conversa com o CORE pela rede interna (http://core:8484).
+  # ---------------------------------------------------------------
+  painel:
+    build:
+      context: ..
+      dockerfile: deploy-vps/Dockerfile
+    command: python app.py
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5050"
+      CORE_URL: "http://core:8484"
+    ports:
+      - "5050:5050"
+    depends_on:
+      - core
+    restart: unless-stopped
+    volumes:
+      - panel_data:/app/data
+    networks:
+      - defense
+
+volumes:
+  core_data:
+  core_streams:
+  panel_data:
+
+networks:
+  defense:
+    driver: bridge

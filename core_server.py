@@ -96,6 +96,8 @@ if _PROVIDER_FILTER:
     _filtered = [p for p in PROVIDERS if p["id"].lower() in _wanted or p["name"].lower() in _wanted]
     if _filtered:
         PROVIDERS = _filtered
+        _wanted_names = {p["name"] for p in PROVIDERS}
+        DEMO_ACCOUNTS = [a for a in DEMO_ACCOUNTS if a.get("provider") in _wanted_names]
 
 
 def _persist():
