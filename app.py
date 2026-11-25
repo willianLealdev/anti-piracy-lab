@@ -29,7 +29,20 @@ from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
-CORE_URL = os.environ.get("CORE_URL", "http://127.0.0.1:8484")
+CORE_URL = os.environ.get("CORE_URL", "").strip()
+
+# ---------------------------------------------------------------------------
+# CONEXÃO ABERTA (zero apontamento prévio):
+#   O painel NÃO nasce conectado a servidor nenhum. Ele só passa a falar com um
+#   servidor (DEFENSE-CORE) quando o OPERADOR digita o endereço no login e a
+#   conexão funciona. Sem isso, todas as listagens ficam vazias.
+# ---------------------------------------------------------------------------
+
+
+def _target():
+    """Servidor atualmente conectado (definido no login). Vazio = não conectado."""
+    return CORE_URL or None
+
 
 
 def core_status():
@@ -72,7 +85,7 @@ def _get_providers():
                 _PROVIDERS_CACHE["ts"] = now
     except Exception:
         pass
-    return _PROVIDERS_CACHE["data"] or PROVIDERS
+    return _PROVIDERS_CACHE["data"]
 
 
 def core_for_provider(provider_name):
@@ -175,187 +188,9 @@ DRM_CORE = {
     "security_level": "Widevine L3 (simulado)",
 }
 
-PROVIDERS = [
-    {
-        "id": "globoplay",
-        "name": "GloboPlay Completo",
-        "total_channels": 180,
-        "description": "125 Globos Regionais + 9 Premiere HD + 4 SporTV (1,2,3,4K) + 6 Telecine + Combate + GloboNews + Multishow + GNT + Viva + Gloob + FAST + BBB.",
-        "drm": "Widevine L3",
-        "color": "green",
-    },
-    {
-        "id": "astra",
-        "name": "Astra TV (Cesbo)",
-        "total_channels": 90,
-        "description": "Abertos (SBT, Record, Band, RedeTV), Telecine, SporTV, Filmes, Infantis, Noticias, Religiosos e Variedades.",
-        "drm": "Sem DRM",
-        "color": "blue",
-    },
-    {
-        "id": "skyplus",
-        "name": "Sky+ (DirectvGO)",
-        "total_channels": 86,
-        "description": "Canais ao vivo com DRM Widevine L3. Captura automatica de chaves KID:KEY no Chrome. Multi-audio PT/EN.",
-        "drm": "Widevine L3",
-        "color": "gold",
-    },
-    {
-        "id": "primevideo",
-        "name": "Prime Video (Amazon)",
-        "total_channels": "Ilimitado",
-        "description": "CazeTV (1,2,3), ge TV, CNN Brasil, Bloomberg + canais de pacotes extras/Channels da conta. Widevine L3 / ClearKey em FHD e HD.",
-        "drm": "Widevine L3 / ClearKey",
-        "color": "cyan",
-    },
-    {
-        "id": "pluto",
-        "name": "Pluto TV Brasil",
-        "total_channels": 187,
-        "description": "Canais FAST gratuitos sem DRM: Filmes, Series tematicas, Nickelodeon & Infantis, Animes (Naruto, Yu-Gi-Oh!), Realities (MasterChef) e Noticias.",
-        "drm": "Sem DRM",
-        "color": "amber",
-    },
-    {
-        "id": "soultv",
-        "name": "Soul TV Brasil",
-        "total_channels": 77,
-        "description": "Canais FAST e regionais brasileiros: Minas Gerais, Filmes/Series, Esportes, Cultura, Musica e Variedades.",
-        "drm": "Sem DRM",
-        "color": "purple",
-    },
-    {
-        "id": "youtube",
-        "name": "YouTube Live",
-        "total_channels": 15,
-        "description": "CazeTV, Canal GOAT, SBT News 24h, Jovem Pan News, Record News, Dragon Ball Z, Bluey, Boomerang, MMA 24/7.",
-        "drm": "Sem DRM",
-        "color": "red",
-    },
-    {
-        "id": "recordplus",
-        "name": "Record+ / PlayPlus",
-        "total_channels": 10,
-        "description": "Record SP, Rio de Janeiro, Minas, Brasilia, Bahia, Record News, Curitiba, Fortaleza, Vitoria e Campinas - Streams HLS diretos.",
-        "drm": "Sem DRM",
-        "color": "teal",
-    },
-    {
-        "id": "bandplay",
-        "name": "BandPlay Oficial",
-        "total_channels": 29,
-        "description": "18 Band Regionais (SP, RJ, MG, RS, PR, DF, BA, BandNews TV, BandSports, Terra Viva) + 11 Radios oficiais sem DRM.",
-        "drm": "Sem DRM",
-        "color": "orange",
-    },
-    {
-        "id": "hbomax",
-        "name": "HBO Max",
-        "total_channels": 40,
-        "description": "Canais ao vivo HBO, Max Originals, DC, Cartoon Network. Widevine L3 (simulado).",
-        "drm": "Widevine L3",
-        "color": "violet",
-    },
-    {
-        "id": "disneyplus",
-        "name": "Disney+",
-        "total_channels": 35,
-        "description": "ESPN, Disney Channel, National Geographic, Star. Widevine L3 (simulado).",
-        "drm": "Widevine L3",
-        "color": "indigo",
-    },
-    {
-        "id": "paramountplus",
-        "name": "Paramount+",
-        "total_channels": 30,
-        "description": "CBS, Nickelodeon, MTV, Paramount Pictures. Widevine L3 (simulado).",
-        "drm": "Widevine L3",
-        "color": "blue",
-    },
-    {
-        "id": "clarotv",
-        "name": "Claro TV+",
-        "total_channels": 120,
-        "description": "Globos Regionais, SporTV (1,2,3), Premiere, Telecine, Discovery, History, Fox, ESPN, Infantis (Cartoon, Nick, Discovery Kids) + canais de variedades. Widevine L3 (simulado).",
-        "drm": "Widevine L3",
-        "color": "rose",
-    },
-]
+PROVIDERS = []  # sem seed: provedores vêm apenas do DEFENSE-CORE
 
-TOKEN_HEALTH = [
-    {
-        "provider": "Sky+ (DirectvGO)",
-        "account": _mask_email("assinante.sky.001@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "18h23min",
-        "expiration": "2026-10-28 10:43:25",
-        "abuse": "ALTO",
-    },
-    {
-        "provider": "GloboPlay Completo",
-        "account": _mask_email("assinante.globo.014@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "--",
-        "expiration": "Nao informada",
-        "abuse": "MEDIO",
-    },
-    {
-        "provider": "Prime Video (Amazon)",
-        "account": _mask_email("assinante.prime.007@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "2d 11h",
-        "expiration": "2026-10-30 08:00:00",
-        "abuse": "ALTO",
-    },
-    {
-        "provider": "Pluto TV Brasil",
-        "account": _mask_email("operador.pluto.002@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "7d 02h",
-        "expiration": "2026-11-04 15:00:00",
-        "abuse": "BAIXO",
-    },
-    {
-        "provider": "Record+ / PlayPlus",
-        "account": _mask_email("revenda.record.003@provedor.com"),
-        "status": "EXPIRANDO",
-        "remaining_time": "41min",
-        "expiration": "2026-10-28 01:12:00",
-        "abuse": "BAIXO",
-    },
-    {
-        "provider": "BandPlay Oficial",
-        "account": _mask_email("operador.band.001@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "5d 03h",
-        "expiration": "2026-11-02 12:00:00",
-        "abuse": "BAIXO",
-    },
-    {
-        "provider": "HBO Max",
-        "account": _mask_email("assinante.hbo.021@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "9h 12min",
-        "expiration": "2026-10-28 22:30:00",
-        "abuse": "MEDIO",
-    },
-    {
-        "provider": "Disney+",
-        "account": _mask_email("assinante.disney.009@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "1d 06h",
-        "expiration": "2026-10-29 18:00:00",
-        "abuse": "MEDIO",
-    },
-    {
-        "provider": "Claro TV+",
-        "account": _mask_email("assinante.claro.005@provedor.com"),
-        "status": "VALIDO",
-        "remaining_time": "3d 08h",
-        "expiration": "2026-10-31 20:00:00",
-        "abuse": "ALTO",
-    },
-]
+TOKEN_HEALTH = []
 
 # ---------------------------------------------------------------------------
 # PERSISTÊNCIA (VPS + canais YouTube sobrevivem a reinícios)
@@ -363,40 +198,15 @@ TOKEN_HEALTH = [
 
 PANEL_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "panel_state.json")
 
-DEFAULT_VPS = [
-    {
-        "id": "vps-1",
-        "name": "teste",
-        "ip": "198.***.***.***",
-        "real_ip": "198.51.100.10",
-        "status": "active",
-        "ssh_port": 22,
-        "web_path": "/var/www/html/directv/",
-        "token": "Teste",
-    },
-]
-
-DEFAULT_YT = [
-    {"id": "yt1", "name": "CazeTV Ao Vivo", "handle": "@CazeTV", "category": "Esportes", "live": "ONLINE", "broadcast": "Monaco x Lille"},
-    {"id": "yt2", "name": "Canal GOAT", "handle": "@canalgoatbr", "category": "Esportes", "live": "OFFLINE", "broadcast": "Aguardando proxima transmissao ao vivo"},
-    {"id": "yt3", "name": "SBT News 24h", "handle": "@sbtnews", "category": "Noticias", "live": "ONLINE", "broadcast": "RADAR NEWS"},
-    {"id": "yt4", "name": "TNT Sports BR", "handle": "@tntsportsbr", "category": "Esportes", "live": "ONLINE", "broadcast": "Champions League"},
-    {"id": "yt5", "name": "ESPN Brasil", "handle": "@espnbrasil", "category": "Esportes", "live": "OFFLINE", "broadcast": "Aguardando"},
-    {"id": "yt6", "name": "ge", "handle": "@ge", "category": "Esportes", "live": "ONLINE", "broadcast": "Brasileirao Serie A"},
-    {"id": "yt7", "name": "Band Jornalismo", "handle": "@bandjornalismo", "category": "Noticias", "live": "ONLINE", "broadcast": "Jornal da Band"},
-    {"id": "yt8", "name": "Record News", "handle": "@recordnews", "category": "Noticias", "live": "ONLINE", "broadcast": "JR 24h"},
-]
-
-
 def _load_panel_state():
     if os.path.exists(PANEL_STATE_FILE):
         try:
             with open(PANEL_STATE_FILE, "r", encoding="utf-8") as f:
                 st = json.load(f)
-            return st.get("vps", list(DEFAULT_VPS)), st.get("youtube", list(DEFAULT_YT))
+            return st.get("vps", []), st.get("youtube", [])
         except Exception:
             pass
-    return list(DEFAULT_VPS), list(DEFAULT_YT)
+    return [], []
 
 
 def _save_panel_state(vps_list, yt_list):
@@ -619,28 +429,13 @@ def _gen_channels():
     return chans
 
 
-CHANNELS = _gen_channels()
+CHANNELS = []  # limpo; populado dinamicamente ao conectar a um provedor
 
 # (YOUTUBE_CHANNELS agora é carregado do arquivo de persistência panel_state.json)
 
-CFG_FILES = [
-    {"filename": "recordplus_teste.cfg", "size": "132KB", "provider": "RecordPlus", "client": "teste", "quality": "--", "audio": "--", "ts": "2026-10-26 10:51:52"},
-    {"filename": "globo_teste_HD.cfg", "size": "124KB", "provider": "GloboPlay", "client": "teste", "quality": "HD", "audio": "PT", "ts": "2026-10-26 10:51:52"},
-    {"filename": "globo_teste_FHD.cfg", "size": "126KB", "provider": "GloboPlay", "client": "teste", "quality": "FHD", "audio": "PT", "ts": "2026-10-26 10:51:52"},
-    {"filename": "sky_teste_SD_EN.cfg", "size": "702KB", "provider": "SkyPlus", "client": "teste", "quality": "SD", "audio": "EN", "ts": "2026-10-26 10:51:52"},
-    {"filename": "sky_teste_SD_PT.cfg", "size": "699KB", "provider": "SkyPlus", "client": "teste", "quality": "SD", "audio": "PT", "ts": "2026-10-26 10:51:52"},
-]
+CFG_FILES = []
 
-DEPLOY_LOGS = [
-    {"ts": "10:43:20", "level": "INFO", "msg": "Iniciando captura (simulada) para GloboPlay_FHD..."},
-    {"ts": "10:43:22", "level": "INFO", "msg": "Canais processados (sintetico): 39"},
-    {"ts": "10:43:23", "level": "INFO", "msg": "Canais com DRM (sintetico): 12"},
-    {"ts": "10:43:24", "level": "INFO", "msg": "Canais reportados com chaves (sintetico): 10"},
-    {"ts": "10:43:26", "level": "INFO", "msg": "Gerando globo_cliente_vps_FHD.cfg (132KB)"},
-    {"ts": "10:43:27", "level": "INFO", "msg": "Deploy SSH (simulado) em VPS 'teste'..."},
-    {"ts": "10:43:28", "level": "INFO", "msg": "Todos os CFGs foram gerados com sucesso"},
-    {"ts": "10:43:28", "level": "INFO", "msg": "Processo de captura finalizado. Finalizado com codigo 0"},
-]
+DEPLOY_LOGS = []
 
 # ---------------------------------------------------------------------------
 # ESTADO DO SIMULADOR (thread em background)
@@ -816,63 +611,6 @@ def _token_sync_loop():
             pass
 
 
-def _seed_sessions():
-    if _state["sessions"]:
-        return
-    for i in range(30):
-        _state["sessions"].append({
-            "id": uuid.uuid4().hex[:8],
-            "provider": random.choice([p["name"] for p in PROVIDERS]),
-            "account": _mask_email(f"assinante.{random.randint(1,999):03d}@provedor.com"),
-            "ip": f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-            "city": random.choice(_CITIES),
-            "ua": random.choice(["VLC/3.0.18", "Lavf/60.16.100", "ffmpeg/6.1", "curl/8.5.0", "SmartTV", "iOS/17", "Android/14"]),
-            "ts": datetime.datetime.utcnow().strftime("%H:%M:%S"),
-        })
-
-
-def _simulator_loop():
-    _seed_sessions()
-    counter = 0
-    while True:
-        time.sleep(2.5)
-        if not _state["running"]:
-            continue
-        counter += 1
-        # atualiza sessões
-        if len(_state["sessions"]) < 60 and counter % 2 == 0:
-            _state["sessions"].append({
-                "id": uuid.uuid4().hex[:8],
-                "provider": random.choice([p["name"] for p in PROVIDERS]),
-                "account": _mask_email(f"assinante.{random.randint(1,999):03d}@provedor.com"),
-                "ip": f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}",
-                "city": random.choice(_CITIES),
-                "ua": random.choice(["VLC/3.0.18", "Lavf/60.16.100", "ffmpeg/6.1", "curl/8.5.0", "SmartTV", "iOS/17", "Android/14"]),
-                "ts": datetime.datetime.utcnow().strftime("%H:%M:%S"),
-            })
-        # gera alerta sintético
-        if counter % 3 == 0 and len(_state["alerts"]) < 60:
-            rule_id, rule_name, detail, sev = random.choice(_alert_templates)
-            acct = _mask_email(f"conta.{random.randint(10,999)}@provedor.com")
-            ip = f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
-            city = random.choice(_CITIES)
-            _state["alerts"].insert(0, {
-                "id": uuid.uuid4().hex[:8],
-                "rule": rule_id,
-                "rule_name": rule_name,
-                "severity": sev,
-                "detail": detail,
-                "account": acct,
-                "ip": ip,
-                "city": city,
-                "ts": datetime.datetime.utcnow().strftime("%H:%M:%S"),
-            })
-            _state["detections"] += 1
-            if sev in ("CRITICO", "ALTO"):
-                _state["iofs"] += 1
-
-
-threading.Thread(target=_simulator_loop, daemon=True).start()
 threading.Thread(target=_token_sync_loop, daemon=True).start()
 
 # ---------------------------------------------------------------------------
@@ -931,7 +669,7 @@ def dashboard():
         "detections": _state["detections"],
         "alerts": len(_state["alerts"]),
         "iofs": _state["iofs"],
-        "providers": len(providers) or len(PROVIDERS),
+        "providers": len(providers),
         "accounts": len(accounts),
         "vps": len(CONNECTED_SERVERS),
         "youtube": len(YOUTUBE_CHANNELS),
@@ -942,9 +680,9 @@ def dashboard():
         "drm_core": DRM_CORE,
         "core": core,
         "core_url": CORE_URL,
-        "providers": providers or PROVIDERS,
+        "providers": providers,
         "accounts": accounts,
-        "token_health": token_health or TOKEN_HEALTH,
+        "token_health": token_health,
         "connected_servers": CONNECTED_SERVERS,
         "youtube": YOUTUBE_CHANNELS,
         "stats": stats,
@@ -1089,13 +827,9 @@ def vps():
 def cfg():
     return jsonify({
         "files": CFG_FILES,
-        "providers": [p["name"] for p in PROVIDERS],
-        "clients": ["Todos os clientes ativos", "teste"],
-        "stats": {
-            "GloboPlay_FHD": {"channels": 39, "drm_channels": 12, "with_keys": 10},
-            "GloboPlay_HD": {"channels": 39, "drm_channels": 12, "with_keys": 10},
-            "RecordPlus": {"channels": 38},
-        },
+        "providers": [],
+        "clients": [],
+        "stats": {},
     })
 
 
@@ -1622,7 +1356,7 @@ def providers_list():
         r = requests.get(f"{CORE_URL}/api/providers", timeout=3)
         return jsonify(r.json())
     except Exception:
-        return jsonify({"providers": PROVIDERS, "error": "DEFENSE-CORE offline (usando lista local)."})
+        return jsonify({"providers": [], "error": "DEFENSE-CORE offline."})
 
 
 @app.route("/api/providers", methods=["POST"])
@@ -1714,6 +1448,10 @@ def auth_login():
         payload = r.json()
         if server_override:
             payload["server"] = server_override
+            # Conexão aberta bem-sucedida => o painel passa a usar ESTE servidor.
+            if payload.get("ok"):
+                global CORE_URL
+                CORE_URL = server_override.rstrip("/")
     except Exception:
         return jsonify({
             "ok": False,
@@ -1791,6 +1529,14 @@ def add_cors(resp):
     resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
     resp.headers["X-DEFENSE-LAB"] = "anti-piracy-demo"
     return resp
+
+
+@app.route("/api/disconnect", methods=["POST"])
+def api_disconnect():
+    """Desconecta o painel do servidor atual (volta ao estado zerado)."""
+    global CORE_URL
+    CORE_URL = ""
+    return jsonify({"ok": True, "message": "Desconectado. O painel voltou ao estado zerado."})
 
 
 @app.route("/api/config")

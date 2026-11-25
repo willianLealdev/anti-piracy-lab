@@ -53,63 +53,6 @@ def _server_for(name):
     return f"http://{_slugify(name)}.defense-lab.net:8484"
 
 
-DEFAULT_PROVIDERS = [
-    {"id": "globoplay", "name": "GloboPlay Completo", "total_channels": 180, "drm": "Widevine L3",
-     "desc": "125 Globos Regionais + 9 Premiere HD + 4 SporTV (1,2,3,4K) + 6 Telecine + Combate + GloboNews + Multishow + GNT + Viva + Gloob + FAST + BBB."},
-    {"id": "astra", "name": "Astra TV (Cesbo)", "total_channels": 90, "drm": "Sem DRM",
-     "desc": "Abertos (SBT, Record, Band, RedeTV), Telecine, SporTV, Filmes, Infantis, Noticias, Religiosos e Variedades."},
-    {"id": "skyplus", "name": "Sky+ (DirectvGO)", "total_channels": 86, "drm": "Widevine L3",
-     "desc": "Canais ao vivo com DRM Widevine L3. Captura automatica de KID:KEY no Chrome. Multi-audio PT/EN."},
-    {"id": "primevideo", "name": "Prime Video (Amazon)", "total_channels": "Ilimitado", "drm": "Widevine L3 / ClearKey",
-     "desc": "CazeTV (1,2,3), ge TV, CNN Brasil, Bloomberg + Channels. FHD e HD."},
-    {"id": "pluto", "name": "Pluto TV Brasil", "total_channels": 187, "drm": "Sem DRM",
-     "desc": "FAST gratuitos: Filmes, Series, Nickelodeon & Infantis, Animes, Realities e Noticias."},
-    {"id": "soultv", "name": "Soul TV Brasil", "total_channels": 77, "drm": "Sem DRM",
-     "desc": "FAST e regionais: Minas Gerais, Filmes/Series, Esportes, Cultura, Musica e Variedades."},
-    {"id": "youtube", "name": "YouTube Live", "total_channels": 15, "drm": "Sem DRM",
-     "desc": "CazeTV, Canal GOAT, SBT News 24h, Jovem Pan, Record News, DBZ, Bluey, Boomerang, MMA 24/7."},
-    {"id": "recordplus", "name": "Record+ / PlayPlus", "total_channels": 10, "drm": "Sem DRM",
-     "desc": "Record SP, RJ, MG, Brasilia, BA, Record News, Curitiba, Fortaleza, Vitoria e Campinas."},
-    {"id": "bandplay", "name": "BandPlay Oficial", "total_channels": 29, "drm": "Sem DRM",
-     "desc": "18 Band Regionais + BandNews TV, BandSports, Terra Viva + 11 Radios oficiais."},
-    {"id": "hbomax", "name": "HBO Max", "total_channels": 40, "drm": "Widevine L3",
-     "desc": "HBO, Max Originals, DC, Cartoon Network."},
-    {"id": "disneyplus", "name": "Disney+", "total_channels": 35, "drm": "Widevine L3",
-     "desc": "ESPN, Disney Channel, National Geographic, Star."},
-    {"id": "paramountplus", "name": "Paramount+", "total_channels": 30, "drm": "Widevine L3",
-     "desc": "CBS, Nickelodeon, MTV, Paramount Pictures."},
-    {"id": "clarotv", "name": "Claro TV+", "total_channels": 120, "drm": "Widevine L3",
-     "desc": "Globos Regionais, SporTV (1,2,3), Premiere, Telecine, Discovery, History, Fox, ESPN, Infantis + variedades."},
-]
-
-DEFAULT_ACCOUNTS = [
-    {"username": "demo.valido", "password": "Sky2026@Ok", "provider": "Sky+ (DirectvGO)",
-     "plan": "Premium Full HD", "expiry": "2027-03-15", "max_devices": 3, "current_devices": 1,
-     "status": "active", "scenario": "ok",
-     "note": "Conta válida — o login deve funcionar normalmente."},
-    {"username": "demo.senha", "password": "Globo2026@Ok", "provider": "GloboPlay Completo",
-     "plan": "Completo + Premiere", "expiry": "2027-01-20", "max_devices": 2, "current_devices": 1,
-     "status": "active", "scenario": "ok",
-     "note": "Digite QUALQUER senha errada para ver o erro de senha incorreta."},
-    {"username": "demo.expirado", "password": "Prime2026@Exp", "provider": "Prime Video (Amazon)",
-     "plan": "Grade completa", "expiry": "2026-11-01", "max_devices": 3, "current_devices": 0,
-     "status": "expired", "scenario": "expired",
-     "note": "Assinatura vencida — o servidor deve negar o acesso."},
-    {"username": "demo.bloqueado", "password": "HBO2026@Blk", "provider": "HBO Max",
-     "plan": "Ao vivo + Originals", "expiry": "2027-06-01", "max_devices": 2, "current_devices": 0,
-     "status": "blocked", "scenario": "blocked",
-     "note": "Conta bloqueada/revogada por compartilhamento — acesso negado."},
-    {"username": "demo.telas", "password": "Claro2026@Dev", "provider": "Claro TV+",
-     "plan": "Família (2 telas)", "expiry": "2027-02-10", "max_devices": 2, "current_devices": 2,
-     "status": "active", "scenario": "limit_screens",
-     "note": "Limite de 2 telas já atingido — nova conexão deve ser bloqueada."},
-    {"username": "demo.geo", "password": "Disney2026@Geo", "provider": "Disney+",
-     "plan": "Star+ ESPN", "expiry": "2027-05-25", "max_devices": 4, "current_devices": 2,
-     "status": "active", "scenario": "geo_anomaly",
-     "note": "Conta válida, mas com sessão em 2 países ao mesmo tempo (alerta)."},
-]
-
-
 def _load_state():
     if os.path.exists(STATE_FILE):
         try:
@@ -122,13 +65,7 @@ def _load_state():
             return st
         except Exception:
             pass
-    provs = []
-    for p in DEFAULT_PROVIDERS:
-        p = dict(p)
-        p["subdomain"] = _slugify(p["name"])
-        p["server"] = _server_for(p["name"])
-        provs.append(p)
-    return {"providers": provs, "accounts": list(DEFAULT_ACCOUNTS)}
+    return {"providers": [], "accounts": []}
 
 
 def _save_state(st):

@@ -154,7 +154,7 @@
     <h5>Gerenciamento</h5>
     <div class="side-item" data-sec="login">👥 Contas &amp; Login <span class="badge" id="accBadge">0</span></div>
     <div class="side-item" data-sec="vps">🖥️ MINHAS VPS <span class="badge" id="vpsBadge">0</span></div>
-    <div class="side-item" data-sec="channels">📺 Canais &amp; DRM <span class="badge">1110</span></div>
+    <div class="side-item" data-sec="channels">📺 Canais &amp; DRM <span class="badge" id="chBadge">0</span></div>
     <div class="side-item" data-sec="captures">🎯 Vault de Capturas <span class="badge" id="capBadge">0</span></div>
     <div class="side-item" data-sec="youtube">▶️ Canais YouTube <span class="badge" id="ytBadge">0</span></div>
     <h5>Distribuição</h5>
@@ -500,7 +500,7 @@
 
 <script>
 const API = '';
-const CORE = localStorage.getItem('coreUrl') || 'http://127.0.0.1:8484';
+const CORE = localStorage.getItem('coreUrl') || '';
 async function get(path){ try{ const r = await fetch(API + path); return r.json(); }catch(e){ return {}; } }
 async function post(path, body){ try{ const r = await fetch(API + path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }catch(e){ return {ok:false,error:'network'}; } }
 async function put(path, body){ try{ const r = await fetch(API + path, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }catch(e){ return {ok:false,error:'network'}; } }
@@ -690,6 +690,8 @@ let _channels = [];
 async function loadChannels(){
   const d = await get('/api/channels');
   _channels = d.channels || [];
+  const chBadge = document.getElementById('chBadge');
+  if(chBadge) chBadge.textContent = (d.total||0);
   document.getElementById('chTotal').textContent = (d.total||0) + ' registros';
   document.getElementById('chCat').innerHTML = (d.categories||[]).map(c=>`<option value="${c==='Todos'?'':c}">${esc(c)}</option>`).join('');
   document.getElementById('chProvider').innerHTML = ['',...new Set(_channels.map(c=>c.provider))].map(p=>`<option value="${p}">${p||'Provider'}</option>`).join('');
