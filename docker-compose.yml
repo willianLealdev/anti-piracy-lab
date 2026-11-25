@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://astra.defense-lab.net"
-      PROVIDER_FILTER: "astra"
+      PUBLIC_URL: "http://skyplus.defense-lab.net"
+      PROVIDER_FILTER: "skyplus"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
