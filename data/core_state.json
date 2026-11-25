@@ -1,0 +1,195 @@
+{
+  "providers": [
+    {
+      "id": "globoplay",
+      "name": "GloboPlay Completo",
+      "total_channels": 180,
+      "drm": "Widevine L3",
+      "desc": "125 Globos Regionais + 9 Premiere HD + 4 SporTV (1,2,3,4K) + 6 Telecine + Combate + GloboNews + Multishow + GNT + Viva + Gloob + FAST + BBB.",
+      "subdomain": "globoplay-completo",
+      "server": "http://globoplay-completo.defense-lab.net:8484"
+    },
+    {
+      "id": "astra",
+      "name": "Astra TV (Cesbo)",
+      "total_channels": 90,
+      "drm": "Sem DRM",
+      "desc": "Abertos (SBT, Record, Band, RedeTV), Telecine, SporTV, Filmes, Infantis, Noticias, Religiosos e Variedades.",
+      "subdomain": "astra-tv-cesbo",
+      "server": "http://astra-tv-cesbo.defense-lab.net:8484"
+    },
+    {
+      "id": "skyplus",
+      "name": "Sky+ (DirectvGO)",
+      "total_channels": 86,
+      "drm": "Widevine L3",
+      "desc": "Canais ao vivo com DRM Widevine L3. Captura automatica de KID:KEY no Chrome. Multi-audio PT/EN.",
+      "subdomain": "sky-directvgo",
+      "server": "http://sky-directvgo.defense-lab.net:8484"
+    },
+    {
+      "id": "primevideo",
+      "name": "Prime Video (Amazon)",
+      "total_channels": "Ilimitado",
+      "drm": "Widevine L3 / ClearKey",
+      "desc": "CazeTV (1,2,3), ge TV, CNN Brasil, Bloomberg + Channels. FHD e HD.",
+      "subdomain": "prime-video-amazon",
+      "server": "http://prime-video-amazon.defense-lab.net:8484"
+    },
+    {
+      "id": "pluto",
+      "name": "Pluto TV Brasil",
+      "total_channels": 187,
+      "drm": "Sem DRM",
+      "desc": "FAST gratuitos: Filmes, Series, Nickelodeon & Infantis, Animes, Realities e Noticias.",
+      "subdomain": "pluto-tv-brasil",
+      "server": "http://pluto-tv-brasil.defense-lab.net:8484"
+    },
+    {
+      "id": "soultv",
+      "name": "Soul TV Brasil",
+      "total_channels": 77,
+      "drm": "Sem DRM",
+      "desc": "FAST e regionais: Minas Gerais, Filmes/Series, Esportes, Cultura, Musica e Variedades.",
+      "subdomain": "soul-tv-brasil",
+      "server": "http://soul-tv-brasil.defense-lab.net:8484"
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube Live",
+      "total_channels": 15,
+      "drm": "Sem DRM",
+      "desc": "CazeTV, Canal GOAT, SBT News 24h, Jovem Pan, Record News, DBZ, Bluey, Boomerang, MMA 24/7.",
+      "subdomain": "youtube-live",
+      "server": "http://youtube-live.defense-lab.net:8484"
+    },
+    {
+      "id": "recordplus",
+      "name": "Record+ / PlayPlus",
+      "total_channels": 10,
+      "drm": "Sem DRM",
+      "desc": "Record SP, RJ, MG, Brasilia, BA, Record News, Curitiba, Fortaleza, Vitoria e Campinas.",
+      "subdomain": "record-playplus",
+      "server": "http://record-playplus.defense-lab.net:8484"
+    },
+    {
+      "id": "bandplay",
+      "name": "BandPlay Oficial",
+      "total_channels": 29,
+      "drm": "Sem DRM",
+      "desc": "18 Band Regionais + BandNews TV, BandSports, Terra Viva + 11 Radios oficiais.",
+      "subdomain": "bandplay-oficial",
+      "server": "http://bandplay-oficial.defense-lab.net:8484"
+    },
+    {
+      "id": "hbomax",
+      "name": "HBO Max",
+      "total_channels": 40,
+      "drm": "Widevine L3",
+      "desc": "HBO, Max Originals, DC, Cartoon Network.",
+      "subdomain": "hbo-max",
+      "server": "http://hbo-max.defense-lab.net:8484"
+    },
+    {
+      "id": "disneyplus",
+      "name": "Disney+",
+      "total_channels": 35,
+      "drm": "Widevine L3",
+      "desc": "ESPN, Disney Channel, National Geographic, Star.",
+      "subdomain": "disney",
+      "server": "http://disney.defense-lab.net:8484"
+    },
+    {
+      "id": "paramountplus",
+      "name": "Paramount+",
+      "total_channels": 30,
+      "drm": "Widevine L3",
+      "desc": "CBS, Nickelodeon, MTV, Paramount Pictures.",
+      "subdomain": "paramount",
+      "server": "http://paramount.defense-lab.net:8484"
+    },
+    {
+      "id": "clarotv",
+      "name": "Claro TV+",
+      "total_channels": 120,
+      "drm": "Widevine L3",
+      "desc": "Globos Regionais, SporTV (1,2,3), Premiere, Telecine, Discovery, History, Fox, ESPN, Infantis + variedades.",
+      "subdomain": "claro-tv",
+      "server": "http://claro-tv.defense-lab.net:8484"
+    }
+  ],
+  "accounts": [
+    {
+      "username": "demo.valido",
+      "password": "Sky2026@Ok",
+      "provider": "Sky+ (DirectvGO)",
+      "plan": "Premium Full HD",
+      "expiry": "2027-03-15",
+      "max_devices": 3,
+      "current_devices": 1,
+      "status": "active",
+      "scenario": "ok",
+      "note": "Conta válida — o login deve funcionar normalmente."
+    },
+    {
+      "username": "demo.senha",
+      "password": "Globo2026@Ok",
+      "provider": "GloboPlay Completo",
+      "plan": "Completo + Premiere",
+      "expiry": "2027-01-20",
+      "max_devices": 2,
+      "current_devices": 1,
+      "status": "active",
+      "scenario": "ok",
+      "note": "Digite QUALQUER senha errada para ver o erro de senha incorreta."
+    },
+    {
+      "username": "demo.expirado",
+      "password": "Prime2026@Exp",
+      "provider": "Prime Video (Amazon)",
+      "plan": "Grade completa",
+      "expiry": "2026-11-01",
+      "max_devices": 3,
+      "current_devices": 0,
+      "status": "expired",
+      "scenario": "expired",
+      "note": "Assinatura vencida — o servidor deve negar o acesso."
+    },
+    {
+      "username": "demo.bloqueado",
+      "password": "HBO2026@Blk",
+      "provider": "HBO Max",
+      "plan": "Ao vivo + Originals",
+      "expiry": "2027-06-01",
+      "max_devices": 2,
+      "current_devices": 0,
+      "status": "blocked",
+      "scenario": "blocked",
+      "note": "Conta bloqueada/revogada por compartilhamento — acesso negado."
+    },
+    {
+      "username": "demo.telas",
+      "password": "Claro2026@Dev",
+      "provider": "Claro TV+",
+      "plan": "Família (2 telas)",
+      "expiry": "2027-02-10",
+      "max_devices": 2,
+      "current_devices": 2,
+      "status": "active",
+      "scenario": "limit_screens",
+      "note": "Limite de 2 telas já atingido — nova conexão deve ser bloqueada."
+    },
+    {
+      "username": "demo.geo",
+      "password": "Disney2026@Geo",
+      "provider": "Disney+",
+      "plan": "Star+ ESPN",
+      "expiry": "2027-05-25",
+      "max_devices": 4,
+      "current_devices": 2,
+      "status": "active",
+      "scenario": "geo_anomaly",
+      "note": "Conta válida, mas com sessão em 2 países ao mesmo tempo (alerta)."
+    }
+  ]
+}

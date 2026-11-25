@@ -1,0 +1,80 @@
+{
+  "vps": [
+    {
+      "id": "vps-1",
+      "name": "teste",
+      "ip": "198.***.***.***",
+      "real_ip": "198.51.100.10",
+      "status": "active",
+      "ssh_port": 22,
+      "web_path": "/var/www/html/directv/",
+      "token": "Teste"
+    }
+  ],
+  "youtube": [
+    {
+      "id": "yt1",
+      "name": "CazeTV Ao Vivo",
+      "handle": "@CazeTV",
+      "category": "Esportes",
+      "live": "ONLINE",
+      "broadcast": "Monaco x Lille"
+    },
+    {
+      "id": "yt2",
+      "name": "Canal GOAT",
+      "handle": "@canalgoatbr",
+      "category": "Esportes",
+      "live": "OFFLINE",
+      "broadcast": "Aguardando proxima transmissao ao vivo"
+    },
+    {
+      "id": "yt3",
+      "name": "SBT News 24h",
+      "handle": "@sbtnews",
+      "category": "Noticias",
+      "live": "ONLINE",
+      "broadcast": "RADAR NEWS"
+    },
+    {
+      "id": "yt4",
+      "name": "TNT Sports BR",
+      "handle": "@tntsportsbr",
+      "category": "Esportes",
+      "live": "ONLINE",
+      "broadcast": "Champions League"
+    },
+    {
+      "id": "yt5",
+      "name": "ESPN Brasil",
+      "handle": "@espnbrasil",
+      "category": "Esportes",
+      "live": "OFFLINE",
+      "broadcast": "Aguardando"
+    },
+    {
+      "id": "yt6",
+      "name": "ge",
+      "handle": "@ge",
+      "category": "Esportes",
+      "live": "ONLINE",
+      "broadcast": "Brasileirao Serie A"
+    },
+    {
+      "id": "yt7",
+      "name": "Band Jornalismo",
+      "handle": "@bandjornalismo",
+      "category": "Noticias",
+      "live": "ONLINE",
+      "broadcast": "Jornal da Band"
+    },
+    {
+      "id": "yt8",
+      "name": "Record News",
+      "handle": "@recordnews",
+      "category": "Noticias",
+      "live": "ONLINE",
+      "broadcast": "JR 24h"
+    }
+  ]
+}

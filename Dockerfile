@@ -1,0 +1,25 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# ffmpeg (gera streams sintéticos) + fontes DejaVu (texto sobre o vídeo)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
+# Dependências Python
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Código completo (sem os streams, que são gerados no primeiro start)
+COPY . .
+
+ENV HOST=0.0.0.0
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 5050 8484
+
+# Gera os streams sintéticos (se ainda não existirem) e sobe o servidor.
+# O comando (app.py ou core_server.py) vem do docker-compose.
+CMD ["sh", "-c", "python gerar_streams.py || true; exec python app.py"]

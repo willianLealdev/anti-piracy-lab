@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AntiPiracy Defense Lab</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<style>
+  :root{
+    --bg:#0B0C0E; --bg2:#0D1014; --panel:#111219; --panel2:#17191D;
+    --line:#2C2B23; --text:#FFFFFF; --muted:#A1A1AA; --muted2:#666B75;
+    --gold:#D4AF37; --gold2:#F5DC80; --green:#22C55E; --red:#EF4444;
+    --amber:#F59E0B; --blue:#38BDF8; --purple:#A855F7; --pink:#EC4899;
+    --cyan:#22D3EE; --mono:'Cascadia Code','Consolas',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px}
+  a{color:var(--gold2)}
+  .mono{font-family:var(--mono);font-size:12px}
+  .wrap{display:flex;min-height:100vh}
+  /* SIDEBAR */
+  .side{width:210px;background:var(--bg2);border-right:1px solid var(--line);padding:14px 0;position:fixed;height:100vh;overflow-y:auto;display:flex;flex-direction:column;z-index:20}
+  .logo{display:flex;align-items:center;justify-content:space-between;padding:0 16px 14px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .logo .t1{font-size:17px;font-weight:800;color:var(--gold2);letter-spacing:.5px;font-style:italic;text-shadow:0 0 14px rgba(212,175,55,.45)}
+  .logo .t2{font-size:10px;color:var(--muted);margin-top:2px}
+  .collapse-btn{background:var(--line);border:1px solid var(--gold);color:var(--gold);width:24px;height:24px;border-radius:6px;cursor:pointer;font-size:12px;line-height:1}
+  .side h5{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding:12px 16px 5px}
+  .side-item{padding:9px 16px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:9px;border-left:3px solid transparent;font-size:13px;border-radius:0 6px 6px 0}
+  .side-item:hover{background:var(--panel)}
+  .side-item.active{border-left:3px solid var(--gold);background:linear-gradient(90deg,rgba(212,175,55,.14),transparent);color:var(--gold2)}
+  .badge{background:var(--gold);color:#1a1400;font-size:10px;font-weight:700;border-radius:20px;padding:1px 8px;margin-left:auto}
+  .side-foot{margin-top:auto;padding:14px 16px 4px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+  .side-foot .status-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;box-shadow:0 0 8px var(--gold)}
+  .side-foot .refresh-btn{margin-left:auto;background:var(--panel2);border:1px solid var(--line);color:var(--muted);width:24px;height:24px;border-radius:6px;cursor:pointer}
+  /* MAIN */
+  .main{margin-left:210px;flex:1;padding:22px 26px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .topbar h2{font-size:18px;font-weight:700}
+  .topbar .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .gbtns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+  .btn:hover{border-color:var(--gold)}
+  .btn.gold{background:linear-gradient(135deg,var(--gold),#8a6d1a);color:#0d0b04;border:none;font-weight:700;box-shadow:0 0 12px rgba(212,175,55,.35)}
+  .btn.green{background:var(--green);color:#04160a;border:none;font-weight:600}
+  .btn.red{background:var(--red);color:#fff;border:none}
+  .btn.sm{padding:4px 9px;font-size:11px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:28px;font-weight:700;margin-top:6px}
+  /* METRIC GRID */
+  .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .mcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;min-height:132px;display:flex;flex-direction:column}
+  .mcard .top{display:flex;justify-content:space-between;align-items:flex-start}
+  .mcard .k{font-size:12px;color:var(--muted);font-weight:500}
+  .mcard .v{font-size:28px;font-weight:700;margin-top:10px}
+  .mcard .foot{margin-top:auto;padding-top:10px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .mico{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .monitoring{display:grid;grid-template-columns:64fr 36fr;gap:16px;margin-top:16px}
+  .panel-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:10px}
+  .panel-head h3{font-size:15px;font-weight:700;color:#fff}
+  .panel-head .sub{color:var(--muted);font-size:11px;margin-top:3px;font-weight:400}
+  .health-table{width:100%;border-collapse:collapse;font-size:12px}
+  .health-table th{color:var(--gold);text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;background:#0b0c0e}
+  .health-table td{padding:10px 8px;border-bottom:1px solid #1f1f25}
+  .health-table tr:hover td{background:var(--panel2)}
+  .srv-card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .srv-card .nm{font-weight:700}
+  .srv-card .ip{color:var(--muted);font-size:12px}
+  .yt-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
+  .yt-ico{width:26px;height:26px;border-radius:6px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .yt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  .yt-card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;align-items:center;gap:12px}
+  .yt-card .yico{width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .yt-card .nm{font-weight:600;font-size:13px}
+  .yt-card .hd{color:var(--muted);font-size:11px}
+  .yt-live{font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:20px}
+  .yt-live.on{background:#2a0f12;color:var(--red)}
+  .yt-live.off{background:#1c1c21;color:var(--muted)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  .panel h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--gold2)}
+  .panel h3 .sub{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px}
+  .sub{color:var(--muted);font-size:11px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  td{padding:8px 6px;border-bottom:1px solid #1f1f25}
+  tr:hover td{background:var(--panel2)}
+  .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+  .tag.red{background:#3a1215;color:#ff6b6b}
+  .tag.amber{background:#3a2c10;color:var(--amber)}
+  .tag.gold{background:#3a3315;color:var(--gold2)}
+  .tag.green{background:#123a1f;color:var(--green)}
+  .tag.blue{background:#12273a;color:var(--blue)}
+  .tag.purple{background:#2a1438;color:var(--purple)}
+  .tag.cyan{background:#12323a;color:var(--cyan)}
+  .tag.pink{background:#3a1226;color:var(--pink)}
+  .alert-item{border-left:3px solid var(--red);background:var(--panel2);padding:10px;border-radius:6px;margin-bottom:8px}
+  .alert-item.high{border-left-color:var(--amber)}
+  .a1{font-weight:600;font-size:12px}
+  .a2{color:var(--muted);font-size:11px;margin-top:3px}
+  .trava{border:1px solid var(--line);border-left:3px solid var(--gold);padding:12px;border-radius:6px;margin-bottom:10px;background:var(--panel2)}
+  .trava .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px}
+  .trava .mod{font-weight:700;color:var(--gold2)}
+  .trava .lab{font-size:12px;color:var(--muted)}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:6px;font-size:12px;margin-bottom:8px;align-items:center}
+  .kv b{color:var(--muted);font-weight:500}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .toolbar input,.toolbar select{background:var(--bg);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px}
+  input[type=text],input[type=password],input[type=date],input[type=number],select,textarea{background:var(--bg);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:6px;font-size:12px;width:100%}
+  textarea{min-height:60px;font-family:var(--mono)}
+  .console{background:#0d0d0f;border:1px solid var(--line);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;max-height:320px;overflow-y:auto}
+  .console .l{margin-bottom:4px;line-height:1.5}
+  .console .ts{color:var(--muted)}
+  .console .info{color:var(--blue)}
+  .console .ok{color:var(--green)}
+  .console .err{color:var(--red)}
+  .logobadge{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--gold),#8a6d1a);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1a1400}
+  .section{display:none}
+  .section.active{display:block}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .muted{color:var(--muted);font-size:12px}
+  .mt8{margin-top:8px}
+  .live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+  .live-dot.on{background:var(--green)}
+  .live-dot.off{background:var(--muted)}
+  .info-box{background:#0d131a;border:1px solid var(--blue);border-left:3px solid var(--blue);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#cfe6f5}
+  .info-box.goldbox{background:#14110a;border-color:var(--gold);border-left-color:var(--gold);color:#f0e3b0}
+  .info-box b{color:#fff}
+  .linkbtn{color:var(--gold2);cursor:pointer;text-decoration:underline;font-size:12px}
+  .srv-link{display:block;margin-top:4px;font-size:11px;color:var(--gold2);word-break:break-all}
+  /* MODAL */
+  #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:center;justify-content:center;padding:20px}
+  #modal .mbox{background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:20px;width:460px;max-width:100%;max-height:90vh;overflow-y:auto}
+  #modal .mtitle{font-weight:700;color:var(--gold2);margin-bottom:14px;font-size:15px}
+  .fld{margin-bottom:10px}
+  .fld label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+  .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="side">
+    <div class="logo">
+      <div>
+        <div class="t1">Extrator V10</div>
+        <div class="t2">DRM Defense Lab</div>
+      </div>
+      <button class="collapse-btn" title="Recolher menu" onclick="toggleSide()">⏴</button>
+    </div>
+    <h5>Principal</h5>
+    <div class="side-item active" data-sec="dashboard">📊 Dashboard</div>
+    <div class="side-item" data-sec="tokens">🔑 Vault de Tokens <span class="badge" id="vaultBadge">0</span></div>
+    <h5>Gerenciamento</h5>
+    <div class="side-item" data-sec="login">👥 Contas &amp; Login <span class="badge" id="accBadge">0</span></div>
+    <div class="side-item" data-sec="vps">🖥️ MINHAS VPS <span class="badge" id="vpsBadge">0</span></div>
+    <div class="side-item" data-sec="channels">📺 Canais &amp; DRM <span class="badge">1110</span></div>
+    <div class="side-item" data-sec="captures">🎯 Vault de Capturas <span class="badge" id="capBadge">0</span></div>
+    <div class="side-item" data-sec="youtube">▶️ Canais YouTube <span class="badge" id="ytBadge">0</span></div>
+    <h5>Distribuição</h5>
+    <div class="side-item" data-sec="cfg">⚙️ Gerador de CFG</div>
+    <div class="side-item" data-sec="deploy">📜 Deploy &amp; Logs</div>
+    <h5>Laboratório</h5>
+    <div class="side-item" data-sec="autoflow">🤖 Auto-Flow</div>
+    <div class="side-item" data-sec="rotate">🔁 Rotação de Tokens</div>
+    <div class="side-item" data-sec="streams">▶️ Streams Simulados</div>
+    <h5>Defesa</h5>
+    <div class="side-item" data-sec="alerts">🚨 Detecções <span class="badge" id="alertBadge">0</span></div>
+    <div class="side-item" data-sec="trava">🛡️ Mapa de Travas</div>
+    <div class="side-foot">
+      <span class="status-dot"></span>
+      <span>DRM EXTRATOR-V10 Online</span>
+      <button class="refresh-btn" onclick="loadDashboard();loadAlerts()" title="Atualizar">⟳</button>
+    </div>
+  </aside>
+
+  <main class="main" id="mainWrap">
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard Operacional</h2>
+        <div class="sub" id="pageSub">Visão em tempo real de provedores Sky+, GloboPlay e servidores conectados</div>
+      </div>
+      <div class="gbtns">
+        <button class="btn green" onclick="baixarUrl('get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts')">Lista M3U</button>
+        <button class="btn" onclick="gerarCfgTodos()">Gerar CFGs</button>
+        <button class="btn gold" onclick="fullUpdate()">⚡ Full Update</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="section active" id="sec-dashboard">
+      <div class="metric-grid" id="statCards"></div>
+      <div class="monitoring">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Saúde &amp; Validade dos Tokens</h3>
+              <div class="sub">Monitoramento contínuo de expiração de credenciais Sky+ e GloboPlay</div>
+            </div>
+            <button class="btn" onclick="go('tokens')">Ver Vault →</button>
+          </div>
+          <table class="health-table">
+            <thead><tr><th>Provedor</th><th>Conta</th><th>Status</th><th>Tempo restante</th><th>Expira em</th><th>Ação</th></tr></thead>
+            <tbody id="tokenHealth"></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Minhas VPS Conectadas</h3>
+              <div class="sub">Servidores e instâncias conectadas</div>
+            </div>
+            <button class="btn" onclick="go('vps')">＋</button>
+          </div>
+          <div id="serversList"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head">
+          <div>
+            <div class="yt-title"><span class="yt-ico">▶</span> Transmissões YouTube Ao Vivo</div>
+            <div class="sub" style="margin-left:34px">Streams perpétuas ao vivo capturadas e prontas para rodar no XUI One / VLC</div>
+          </div>
+          <div class="gbtns">
+            <button class="btn" onclick="verificarLives()">Verificar Status</button>
+            <button class="btn gold" onclick="go('youtube')">Abrir Módulo YouTube →</button>
+          </div>
+        </div>
+        <div class="yt-grid" id="youtubeDash"></div>
+      </div>
+    </section>
+
+    <!-- LOGIN -->
+    <section class="section" id="sec-login">
+      <div class="grid2">
+        <div class="panel">
+          <h3>🔑 Conectar ao provedor <span class="sub">simulação de autenticação</span></h3>
+          <div class="muted" style="margin-bottom:12px">Escolha o <b>provedor</b>, digite as credenciais e veja TODAS as respostas possíveis do servidor.</div>
+          <div class="kv"><b>Provedor</b>
+            <div style="display:flex;gap:6px">
+              <select id="authProvider" onchange="authProviderChanged()" style="flex:1">
+                <option value="">— Selecione o provedor —</option>
+              </select>
+              <button class="btn" onclick="providerForm()" title="Cadastrar provedor">＋</button>
+            </div>
+          </div>
+          <div class="kv"><b>Servidor (endereço direto)</b>
+            <input id="authServer" placeholder="ex.: http://151.240.100.202:8484 ou painel-clone.com" style="font-family:var(--mono);font-size:12px">
+            <div class="muted" style="margin-top:4px">Se vazio, usa o servidor do provedor selecionado. Se preenchido, conecta <b>direto</b> nesse endereço (ex.: DEFENSE-CORE clonado em outra VPS/país).</div>
+          </div>
+          <div class="kv"><b>Usuário</b><input id="authUser" placeholder="ex.: demo.valido"></div>
+          <div class="kv"><b>Senha</b><input id="authPass" type="text" placeholder="ex.: Sky2026@Ok"></div>
+          <div class="muted" style="margin:6px 0 10px">📱 O <b>ID do dispositivo</b> é gerado automaticamente pelo app — você não digita. É com ele que o provedor conta as telas.</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn gold" onclick="doLogin()">Conectar</button>
+            <button class="btn" onclick="clearAuth()">Limpar</button>
+          </div>
+          <div id="authResult" style="margin-top:14px"></div>
+        </div>
+        <div class="panel">
+          <h3>🧪 Contas de teste <span class="sub">fornecidas pelo provedor</span></h3>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="muted">Clique em "Usar" para testar cada cenário. Edite ou exclua à vontade.</div>
+            <button class="btn gold sm" onclick="accountForm()">＋ Nova conta</button>
+          </div>
+          <div id="authAccounts"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h3>🏢 Provedores cadastrados <span class="sub">servidores simulados (subdomínios)</span></h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="muted">Cada provedor tem um <b>link de servidor</b> próprio para a simulação na VPS.</div>
+          <button class="btn gold sm" onclick="providerForm()">＋ Cadastrar provedor</button>
+        </div>
+        <div id="providersList"></div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h3>📜 Log de conexões</h3>
+        <div class="console" id="authLog" style="min-height:120px"></div>
+      </div>
+    </section>
+
+    <!-- AUTO-FLOW -->
+    <section class="section" id="sec-autoflow">
+      <div class="info-box goldbox"><b>🤖 Piloto automático:</b> basta <b>selecionar o provedor</b>. Se houver contas cadastradas para ele, escolha qual executar — o sistema faz todo o resto sozinho (conecta → playlist → cataloga → DRM → CFG → deploy).</div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>🤖 Auto-Flow <span class="sub">o sistema faz tudo sozinho</span></h3>
+          <div class="kv"><b>🏢 Provedor</b>
+            <select id="afProvider" onchange="afProviderChanged()">
+              <option value="">— Selecione o provedor —</option>
+            </select>
+          </div>
+          <div class="kv"><b>👤 Conta (opcional)</b>
+            <select id="afUser">
+              <option value="">— Selecione a conta (ou deixe automático) —</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn gold" onclick="startAutoflow()">▶ Iniciar Auto-Flow</button>
+            <button class="btn" onclick="stopAutoflow()">⏹ Parar</button>
+          </div>
+          <div id="autoflowStatus" style="margin-top:14px"></div>
+        </div>
+        <div class="panel">
+          <h3>🧩 Etapas do fluxo</h3>
+          <div id="autoflowSteps"><div class="muted">Nenhum fluxo iniciado.</div></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h3>📜 Log do Auto-Flow</h3>
+        <div class="console" id="autoflowLog" style="min-height:160px"></div>
+      </div>
+    </section>
+
+    <!-- ROTACAO -->
+    <section class="section" id="sec-rotate">
+      <div class="grid2">
+        <div class="panel">
+          <h3>🔁 Rotação de Tokens &amp; Links</h3>
+          <div class="muted" style="margin-bottom:12px">O provedor "gira" os tokens/links. O painel <b>detecta sozinho</b>, dispara alerta e re-sincroniza.</div>
+          <button class="btn gold" onclick="rotateTokens()">🔁 Rotacionar tokens (provedor)</button>
+          <div class="kv" style="margin-top:12px"><b>Revisão atual</b><span class="mono" id="rotateRev">--</span></div>
+          <div class="kv"><b>Última rotação</b><span id="rotateLast">--</span></div>
+          <div class="kv"><b>Rotações detectadas</b><span class="mono" id="rotateCount">0</span></div>
+        </div>
+        <div class="panel">
+          <h3>📡 Monitor de sincronização</h3>
+          <div id="syncStatus" class="muted">Aguardando...</div>
+          <div id="syncHistory" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <h3>🎫 Tokens ativos por canal</h3>
+        <div style="max-height:340px;overflow:auto">
+          <table><thead><tr><th>Canal</th><th>Token atual</th><th>KID:KEY (chave DRM)</th><th>DRM</th></tr></thead><tbody id="liveTokens"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOKENS -->
+    <section class="section" id="sec-tokens">
+      <div class="panel">
+        <h3>🔐 Vault de Tokens <span class="sub">tokens capturados na simulação</span></h3>
+        <div class="info-box"><b>O que é:</b> aqui ficam os <b>tokens de sessão "capturados"</b> durante a demo (quando o login é bem-sucedido). É o cofre que um sistema pirata usa para guardar credenciais. Na simulação, cada token permite <b>trocar a conta</b> associada — exatamente o vetor de abuso que o cliente precisa detectar.</div>
+        <table><thead><tr><th>Provider</th><th>Conta</th><th>Token ID</th><th>Status</th><th>Tempo restante</th><th>IPs distintos</th><th>Abuso</th><th>Ação</th></tr></thead><tbody id="tokensTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- CHANNELS -->
+    <section class="section" id="sec-channels">
+      <div class="panel">
+        <h3>📺 Canais &amp; Chaves DRM <span class="sub" id="chTotal"></span></h3>
+        <div class="toolbar">
+          <input id="chSearch" placeholder="ChannelName / CID" oninput="renderChannels()">
+          <select id="chCat" onchange="renderChannels()"></select>
+          <select id="chQuality" onchange="renderChannels()"><option value="">Qualidade</option><option>4K</option><option>FHD</option><option>HD</option><option>SD</option></select>
+          <select id="chProvider" onchange="renderChannels()"><option value="">Provider</option></select>
+          <button class="btn gold" onclick="baixarCanaisM3u()">Baixar M3U</button>
+          <button class="btn" onclick="copiarLinkCanaisM3u()">Copiar Link M3U</button>
+        </div>
+        <table><thead><tr><th>ID</th><th>Canal</th><th>CID</th><th>Categoria</th><th>Qualidade</th><th>Áudio</th><th>Provedor</th><th>DRM</th><th>KID:KEY</th><th>Ações</th></tr></thead><tbody id="channelsTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- CAPTURES -->
+    <section class="section" id="sec-captures">
+      <div class="panel">
+        <h3>🎯 Vault de Capturas <span class="sub">KID:KEY DRM (simulada) + links M3U FAST capturados automaticamente</span></h3>
+        <div class="toolbar">
+          <button class="btn gold" onclick="loadCaptures()">⟳ Recarregar</button>
+        </div>
+        <table><thead><tr><th>Canal</th><th>Provedor</th><th>Tipo</th><th>KID:KEY</th><th>Link M3U / Stream</th><th>Capturado em</th><th>Ação</th></tr></thead><tbody id="capturesBody"></tbody></table>
+      </div>
+    </section>
+
+    <!-- STREAMS -->
+    <section class="section" id="sec-streams">
+      <div class="panel">
+        <h3>▶️ Streams Simulados <span class="sub">canais 100% sintéticos reproduzíveis</span></h3>
+        <div class="muted" style="margin-bottom:12px">Canais <b>FAKE</b> gerados por ffmpeg (padrões de teste). Nenhum conteúdo protegido. Abra no VLC para comprovar: <b>login → playlist → reprodução</b>.</div>
+        <div class="toolbar">
+          <button class="btn gold" onclick="baixarPlaylist()">⬇ Baixar playlist M3U completa</button>
+          <button class="btn" onclick="copiarLinkPlaylist()">🔗 Copiar link M3U</button>
+        </div>
+        <div id="streamsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px"></div>
+      </div>
+    </section>
+
+    <!-- VPS -->
+    <section class="section" id="sec-vps">
+      <div class="panel">
+        <h3>🖥️ Minhas VPS / Servidores IPTV</h3>
+        <div class="toolbar">
+          <button class="btn" onclick="baixarListaXui()">Baixar Lista XUI</button>
+          <button class="btn gold" onclick="vpsForm()">＋ Nova VPS</button>
+        </div>
+        <table><thead><tr><th>VPS</th><th>IP</th><th>SSH</th><th>Web Path</th><th>Token</th><th>Status</th><th>Ações</th></tr></thead><tbody id="vpsTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- YOUTUBE -->
+    <section class="section" id="sec-youtube">
+      <div class="panel">
+        <h3>▶️ Canais YouTube Ao Vivo <span class="sub" id="ytTotal"></span></h3>
+        <div class="toolbar">
+          <input id="ytSearch" placeholder="Pesquisar canal..." oninput="renderYoutube()">
+          <button class="btn" onclick="renderYoutube()">Pesquisar no YouTube</button>
+          <button class="btn gold" onclick="ytForm()">＋ Novo Canal</button>
+          <button class="btn" onclick="verificarLives()">Verificar Lives Agora</button>
+          <button class="btn" onclick="baixarYoutubeM3u()">Baixar M3U</button>
+        </div>
+        <table><thead><tr><th>Logo</th><th>Canal</th><th>Handle</th><th>Categoria</th><th>Status</th><th>Transmissão atual</th><th>Ações</th></tr></thead><tbody id="ytTable"></tbody></table>
+      </div>
+    </section>
+
+    <!-- CFG -->
+    <section class="section" id="sec-cfg">
+      <div class="info-box goldbox"><b>⚙️ O que é o Gerador de CFG:</b> "CFG" = arquivo de <b>configuração</b> que os painéis IPTV (tipo XUI One) importam para cadastrar centenas de canais de uma vez. Num sistema pirata, ele pega os canais "roubados" e monta um arquivo pronto para o servidor distribuir. Aqui ele gera <b>arquivos 100% simulados</b> (não funcionam em painel real) só para demonstrar o fluxo.</div>
+      <div class="panel">
+        <h3>⚙️ Gerador de CFG</h3>
+        <div class="toolbar">
+          <select id="cfgClient"><option>Todos os clientes ativos</option><option>teste</option></select>
+          <label style="font-size:12px"><input type="checkbox" id="cfgSky" checked> SkyPlus</label>
+          <label style="font-size:12px"><input type="checkbox" id="cfgGlobo" checked> GloboPlay</label>
+          <label style="font-size:12px"><input type="checkbox" id="cfgRecord" checked> RecordPlus</label>
+          <button class="btn gold" onclick="gerarCfgTodos()">Gerar Todos os CFGs</button>
+        </div>
+        <div class="grid2">
+          <div>
+            <h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">Arquivos gerados</h4>
+            <table><thead><tr><th>Arquivo</th><th>Tamanho</th><th></th></tr></thead><tbody id="cfgTable"></tbody></table>
+          </div>
+          <div>
+            <h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">Estatísticas (sintéticas)</h4>
+            <div id="cfgStats"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPLOY -->
+    <section class="section" id="sec-deploy">
+      <div class="panel">
+        <h3>📜 Deploy &amp; Logs do Sistema</h3>
+        <div class="muted" style="margin-bottom:8px">Console de terminal em tempo real (ambiente: <span class="mono" id="deployDir"></span>)</div>
+        <div class="console" id="deployConsole"></div>
+      </div>
+    </section>
+
+    <!-- ALERTS -->
+    <section class="section" id="sec-alerts">
+      <div class="info-box"><b>🚨 O que são as Detecções:</b> é o <b>motor defensivo</b> do laboratório. Enquanto a simulação roda, ele gera alertas (regras RULE-001 a RULE-008) para cada comportamento suspeito — token compartilhado, brute force, limite de telas, rotação de token etc. É exatamente o que o cliente precisa implementar para <b>pegar o pirata no ato</b>.</div>
+      <div class="grid2">
+        <div class="panel">
+          <h3>🚨 Detecções em tempo real <span class="sub" id="alertCount"></span></h3>
+          <div id="alertsList"></div>
+        </div>
+        <div class="panel">
+          <h3>🛡️ Regras de detecção ativas</h3>
+          <div id="rulesList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRAVA MAP -->
+    <section class="section" id="sec-trava">
+      <div class="info-box goldbox"><b>🛡️ O que é o Mapa de Travas:</b> é o coração da proposta defensiva. Para cada módulo do sistema investigado (EXTRATOR-V10), ele mostra: <b>(1) o que o atacante enxerga</b>, <b>(2) o indicador de comprometimento</b> e <b>(3) onde colocar a trava</b>. É o "mapa" que a engenharia do cliente usa para fechar as brechas.</div>
+      <div class="panel">
+        <h3>🛡️ Mapa de Travas <span class="sub">onde o atacante age × onde colocar a defesa</span></h3>
+        <div id="travaList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal">
+  <div class="mbox">
+    <div class="mtitle" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <div class="modal-btns">
+      <button class="btn" onclick="closeModal()">Cancelar</button>
+      <button class="btn gold" id="modalOk">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div id="playerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:20px">
+  <div style="color:#fff;font-weight:700;font-size:16px" id="playerTitle">Stream simulado</div>
+  <video id="playerVideo" controls autoplay style="max-width:90%;max-height:70vh;background:#000;border:1px solid var(--gold);border-radius:8px"></video>
+  <div style="display:flex;gap:10px">
+    <button class="btn" onclick="document.getElementById('playerModal').style.display='none';document.getElementById('playerVideo').pause();document.getElementById('playerVideo').src=''">Fechar</button>
+    <button class="btn gold" onclick="baixarUrl(document.getElementById('playerVideo').src,'stream_simulado.m3u8')">⬇ Baixar .m3u8</button>
+  </div>
+</div>
+
+<div id="toast" style="position:fixed;bottom:20px;right:20px;background:var(--gold);color:#1a1400;padding:10px 16px;border-radius:8px;font-weight:600;display:none;z-index:200"></div>
+
+<script>
+const API = '';
+const CORE = localStorage.getItem('coreUrl') || 'http://127.0.0.1:8484';
+async function get(path){ try{ const r = await fetch(API + path); return r.json(); }catch(e){ return {}; } }
+async function post(path, body){ try{ const r = await fetch(API + path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }catch(e){ return {ok:false,error:'network'}; } }
+async function put(path, body){ try{ const r = await fetch(API + path, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); return r.json(); }catch(e){ return {ok:false,error:'network'}; } }
+async function del(path){ try{ const r = await fetch(API + path, {method:'DELETE'}); return r.json(); }catch(e){ return {ok:false,error:'network'}; } }
+
+function sevTag(s){ const m={CRITICO:'red',ALTO:'amber',MEDIO:'gold',BAIXO:'green'}; return `<span class="tag ${m[s]||'green'}">${s}</span>`; }
+function statusTag(s){
+  if(s==='VALIDO'||s==='active'||s==='ONLINE') return '<span class="tag green">'+s+'</span>';
+  if(s==='EXPIRANDO'||s==='OFFLINE') return '<span class="tag amber">'+s+'</span>';
+  if(s==='CAPTURADO') return '<span class="tag red">🎯 CAPTURADO</span>';
+  return '<span class="tag gold">'+s+'</span>';
+}
+function abuseTag(a){ const m={ALTO:'red',MEDIO:'amber',BAIXO:'green',CAPTURA:'red'}; return `<span class="tag ${m[a]||'green'}">${a||'BAIXO'}</span>`; }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._tm); t._tm=setTimeout(()=>t.style.display='none',2600); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Copiar com fallback
+function copiarTexto(t){
+  const done = ()=>toast('Link copiado!');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));
+  } else fallbackCopy(t,done);
+}
+function fallbackCopy(t,done){
+  const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('Copie manualmente: '+t); }
+  document.body.removeChild(ta);
+}
+// Download
+function baixarUrl(rel){
+  const base = rel.startsWith('http') ? '' : CORE + '/';
+  window.open(base + rel, '_blank');
+}
+function baixarPainel(path){ window.open(API + path, '_blank'); }
+
+// Navegação
+function go(s){
+  const el = document.querySelector(`[data-sec="${s}"]`); if(el) el.click();
+}
+function toggleSide(){
+  const side=document.querySelector('.side'); const main=document.getElementById('mainWrap');
+  if(side.style.width==='52px'){ side.style.width='210px'; main.style.marginLeft='210px'; }
+  else{ side.style.width='52px'; main.style.marginLeft='52px'; }
+}
+const TITLES = {
+  dashboard:['Dashboard Operacional','Visão em tempo real de provedores e servidores conectados'],
+  login:['Conexão & Login','Simulação de autenticação no provedor (contas de teste)'],
+  autoflow:['Auto-Flow','O sistema faz tudo sozinho após o login (fluxo completo)'],
+  rotate:['Rotação de Tokens','O provedor troca tokens/links e o painel re-sincroniza sozinho'],
+  tokens:['Vault de Tokens','Tokens capturados na simulação'],
+  channels:['Canais & Chaves DRM','Listagem de transmissões, IDs, Widevine L3 e CIDs'],
+  captures:['Vault de Capturas','KID:KEY DRM (simulada) e links M3U FAST capturados automaticamente'],
+  streams:['Streams Simulados','Canais 100% sintéticos reproduzíveis no VLC'],
+  vps:['Minhas VPS','Gerenciamento de servidores VPS para distribuição'],
+  youtube:['Canais YouTube Ao Vivo','Monitoramento de transmissões esportivas e notícias'],
+  cfg:['Gerador de CFG','Geração de arquivos de configuração para servidores XUI'],
+  deploy:['Deploy & Logs','Console de terminal em tempo real para automações'],
+  alerts:['Detecções de Abuso','Alertas e regras defensivas em tempo real'],
+  trava:['Mapa de Travas','Anatomia do atacante × camada defensiva'],
+};
+document.querySelectorAll('.side-item').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('.side-item').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    const s = el.dataset.sec;
+    document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+    const sec = document.getElementById('sec-'+s); if(sec) sec.classList.add('active');
+    document.getElementById('pageTitle').textContent = TITLES[s][0];
+    document.getElementById('pageSub').textContent = TITLES[s][1];
+    if(s==='alerts') loadAlerts();
+    if(s==='trava') loadTrava();
+    if(s==='login') { loadAuthProviders(); loadAuthAccounts(); }
+    if(s==='tokens') loadTokens();
+    if(s==='channels') loadChannels();
+    if(s==='captures') loadCaptures();
+    if(s==='streams') loadStreams();
+    if(s==='vps') loadVps();
+    if(s==='youtube') loadYoutube();
+    if(s==='cfg') loadCfg();
+    if(s==='deploy') loadDeploy();
+    if(s==='autoflow') { loadAuthProviders(); afProviderChanged(); loadAutoflowStatus(); }
+    if(s==='rotate') { loadLiveTokens(); loadSync(); }
+  });
+});
+
+// ===== MODAL =====
+function openModal(title, bodyHtml, onOk){
+  document.getElementById('modalTitle').innerHTML = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('modal').style.display='flex';
+  document.getElementById('modalOk').onclick = onOk;
+}
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function fldId(id){ const el=document.getElementById(id); return el ? el.value.trim() : ''; }
+
+// ===== DASHBOARD =====
+function fmtExp(e){
+  if(!e || e==='Nao informada' || e==='--') return '—';
+  const parts = e.split(' '); const dt = parts[0], tm = parts[1];
+  if(!dt) return e; const [y,m,dd] = dt.split('-');
+  return `${dd}/${m}/${y}${tm?`<br><span class="mono" style="font-size:11px">${tm}</span>`:''}`;
+}
+async function loadDashboard(){
+  let d = {stats:{}, token_health:[], connected_servers:[], youtube:[], core:{status:'Offline'}};
+  try{ d = await get('/api/dashboard'); }catch(e){}
+  const st = d.stats || {};
+  const coreOn = !!(d.core && d.core.status === 'Ativo');
+  const cards = [
+    {k:'Status DRM Core', v: coreOn?'Ativo':'Offline', vc: coreOn?'var(--green)':'var(--red)', ico:'🛡️', bg: coreOn?'#123a1f':'#3a1215', foot:`<span style="color:${coreOn?'var(--green)':'var(--red)'}">${coreOn?'✓':'✗'}</span> DEFENSE-CORE · Porta 8484 / RAM Disk OK`},
+    {k:'Contas Cadastradas', v: st.accounts ?? 0, vc:'var(--blue)', ico:'👤', bg:'#12273a', foot:'<span class="tag blue">Token Válido</span>' + ` · ${st.accounts ?? 0} no banco`},
+    {k:'Provedores', v: st.providers ?? 0, vc:'var(--purple)', ico:'🏢', bg:'#2a1438', foot:'<span class="tag red">Configurado</span> · Conectados'},
+    {k:'Canais Catalogados', v: st.channels ?? 0, vc:'var(--pink)', ico:'📡', bg:'#3a1226', foot:'<span style="color:var(--pink)">HD/FHD/4K</span> · DRM mapeado'},
+    {k:'MINHAS VPS', v: st.vps ?? 0, vc:'var(--gold)', ico:'🌐', bg:'#3a3315', foot:`<span style="color:var(--green)">${st.vps ?? 0} ativas</span> · VPS Conectadas`},
+    {k:'Canais YouTube', v: st.youtube ?? 0, vc:'var(--red)', ico:'▶', bg:'#3a1215', foot:'<span style="color:var(--red)">● Ao Vivo</span> · HLS Perpétuo'},
+    {k:'Detecções', v: st.detections ?? 0, vc:'var(--cyan)', ico:'🛡️', bg:'#12323a', foot:`<span style="color:var(--cyan)">${st.alerts ?? 0} alertas</span> · ${st.iofs ?? 0} IoCs`},
+  ];
+  document.getElementById('statCards').innerHTML = cards.map(c=>`
+    <div class="mcard">
+      <div class="top"><div class="k">${c.k}</div><div class="mico" style="background:${c.bg}">${c.ico}</div></div>
+      <div class="v" style="color:${c.vc}">${c.v}</div>
+      <div class="foot">${c.foot}</div>
+    </div>`).join('') + '<div class="mcard" style="visibility:hidden"></div>';
+
+  document.getElementById('tokenHealth').innerHTML = (d.token_health||[]).slice(0,6).map(t=>{
+    const provColor = t.provider.includes('Sky') ? 'var(--cyan)' : 'var(--red)';
+    return `<tr>
+      <td><span style="color:${provColor};font-weight:600">${t.provider}</span></td>
+      <td class="mono" style="color:var(--muted)">${t.account} 🙈</td>
+      <td>${statusTag(t.status)}</td>
+      <td class="mono">${t.remaining_time || '—'}</td>
+      <td class="mono" style="font-size:11px">${fmtExp(t.expiration)}</td>
+      <td><button class="btn sm" onclick="go('tokens')">↗</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="muted">Nenhuma conta cadastrada.</td></tr>';
+
+  document.getElementById('serversList').innerHTML = (d.connected_servers||[]).map(v=>`
+    <div class="srv-card">
+      <div><div class="nm">${esc(v.name)}</div><div class="ip mono">${esc(v.ip)} 🙈</div></div>
+      ${statusTag(v.status)}
+    </div>`).join('') || '<div class="muted">Nenhuma VPS.</div>';
+
+  const yts = (d.youtube||[]).slice(0,3).map(y=>({n:y.name, h:y.handle, on:y.live==='ONLINE'}));
+  document.getElementById('youtubeDash').innerHTML = yts.map(y=>`
+    <div class="yt-card">
+      <div class="yico">▶</div>
+      <div><div class="nm">${esc(y.n)}</div><div class="hd">${esc(y.h)}</div></div>
+      <span class="yt-live ${y.on?'on':'off'}" style="margin-left:auto">${y.on?'● AO VIVO':'OFFLINE'}</span>
+    </div>`).join('') || '<div class="muted">Nenhum canal YouTube.</div>';
+}
+async function fullUpdate(){ await post('/api/simulate'); toast('⚡ Full Update: ataque simulado disparado!'); loadDashboard(); loadAlerts(); }
+
+// ===== TOKENS (VAULT) =====
+async function loadTokens(){
+  const d = await get('/api/tokens');
+  document.getElementById('vaultBadge').textContent = d.tokens ? d.tokens.filter(t=>t.captured).length : 0;
+  document.getElementById('tokensTable').innerHTML = (d.tokens||[]).map(t=>`
+    <tr>
+      <td>${esc(t.provider)}</td>
+      <td class="mono" id="acc-${t.token_id}">${esc(t.account)}</td>
+      <td class="mono">${esc(t.token_id)}</td>
+      <td>${statusTag(t.status)}</td>
+      <td class="mono">${esc(t.remaining_time)}</td>
+      <td>${t.distinct_ips}</td>
+      <td>${abuseTag(t.abuse)}</td>
+      <td>
+        ${t.captured ? `<button class="btn sm gold" onclick='trocarContaToken("${t.token_id}")'>Trocar conta</button>` : `<button class="btn sm" onclick="toast('Token revogado (simulado)')">Revogar</button>`}
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" class="muted">Nenhum token capturado ainda. Faça um login para capturar.</td></tr>';
+}
+function trocarContaToken(tid){
+  openModal('🔁 Trocar conta do token',
+    `<div class="muted" style="margin-bottom:10px">Token <span class="mono">${esc(tid)}</span> — informe a nova conta (simula a reatribuição de credencial roubada).</div>
+     <div class="fld"><label>Nova conta</label><input id="mNewAcc" placeholder="ex.: outro.assinante@provedor.com"></div>`,
+    async ()=>{
+      const account = fldId('mNewAcc');
+      if(!account){ toast('Informe a nova conta.'); return; }
+      const d = await post(`/api/vault/${encodeURIComponent(tid)}/change`, {account});
+      closeModal();
+      toast(d.ok ? d.message : (d.error||'Erro'));
+      loadTokens();
+    });
+}
+
+// ===== CHANNELS =====
+let _channels = [];
+async function loadChannels(){
+  const d = await get('/api/channels');
+  _channels = d.channels || [];
+  document.getElementById('chTotal').textContent = (d.total||0) + ' registros';
+  document.getElementById('chCat').innerHTML = (d.categories||[]).map(c=>`<option value="${c==='Todos'?'':c}">${esc(c)}</option>`).join('');
+  document.getElementById('chProvider').innerHTML = ['',...new Set(_channels.map(c=>c.provider))].map(p=>`<option value="${p}">${p||'Provider'}</option>`).join('');
+  renderChannels();
+}
+function renderChannels(){
+  const q = (document.getElementById('chSearch').value||'').toLowerCase();
+  const cat = document.getElementById('chCat').value;
+  const qual = document.getElementById('chQuality').value;
+  const prov = document.getElementById('chProvider').value;
+  const list = _channels.filter(c=>{
+    if(q && !(c.name.toLowerCase().includes(q) || c.cid.toLowerCase().includes(q))) return false;
+    if(cat && c.category!==cat) return false;
+    if(qual && c.quality!==qual) return false;
+    if(prov && c.provider!==prov) return false;
+    return true;
+  }).slice(0,60);
+  document.getElementById('channelsTable').innerHTML = list.map(c=>{
+    const isDrm = c.drm==='Widevine L3';
+    const acao = isDrm
+      ? `<button class="btn tiny gold" onclick="capturarCanal(${c.id})">🔑 Capturar</button>`
+      : `<button class="btn tiny" onclick="capturarCanal(${c.id})">▶ Capturar</button>`;
+    return `<tr><td>${c.id}</td><td>${esc(c.name)}</td><td class="mono">${esc(c.cid)}</td><td>${esc(c.category)}</td>
+    <td><span class="tag ${c.quality==='FHD'||c.quality==='4K'?'gold':'blue'}">${c.quality}</span></td>
+    <td>${esc(c.audio)}</td><td>${esc(c.provider)}</td>
+    <td>${isDrm?'<span class="tag red">Widevine L3</span>':'<span class="tag green">Sem DRM</span>'}</td>
+    <td class="mono">${esc(c.kid?c.kid.slice(0,10):'--')}...</td>
+    <td>${acao}</td></tr>`;
+  }).join('') || '<tr><td colspan="10" class="muted">Nenhum canal encontrado.</td></tr>';
+}
+async function capturarCanal(id){
+  const c = _channels.find(x=>x.id===id);
+  if(!c){ toast('Canal não encontrado'); return; }
+  const isDrm = c.drm==='Widevine L3';
+  try{
+    const r = await post(`/api/channels/${id}/capture`, {name:c.name, drm:c.drm, provider:c.provider});
+    if(!r.ok){ toast(r.error||'Falha ao capturar'); return; }
+    if(isDrm){
+      toast(`🔑 KID:KEY capturada e salva no banco: ${r.capture.kid_key}`);
+    } else {
+      toast(`▶ Link M3U capturado: ${r.capture.m3u_link}`);
+    }
+    // mostra o resultado no player (prova visual)
+    if(r.capture.stream_url){ abrirPlayerUrl(r.capture.stream_url, c.name); }
+    loadCaptures();
+  }catch(e){ toast('Erro de conexão'); }
+}
+
+let _captures = [];
+async function loadCaptures(){
+  const d = await get('/api/captures');
+  _captures = d.captures || [];
+  const badge = document.getElementById('capBadge');
+  if(badge) badge.textContent = _captures.length;
+  const el = document.getElementById('capturesBody');
+  if(!el) return;
+  el.innerHTML = _captures.map(c=>`
+    <tr>
+      <td>${esc(c.channel)}</td>
+      <td>${esc(c.provider)}</td>
+      <td>${c.type==='drm_key'?'<span class="tag red">🔑 DRM KID:KEY</span>':'<span class="tag green">▶ FAST M3U</span>'}</td>
+      <td class="mono">${esc(c.kid_key||'--')}</td>
+      <td class="mono">${esc(c.stream_url||c.m3u_link||'--')}</td>
+      <td>${esc(c.captured_at)}</td>
+      <td><button class="btn tiny" onclick="abrirPlayerUrl('${esc(c.stream_url||c.m3u_link)}','${esc(c.channel)}')">▶ Ver</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">Nenhuma captura ainda. Clique em 🔑 Capturar em um canal.</td></tr>';
+}
+
+function abrirPlayerUrl(url, nome){
+  const modal = document.getElementById('playerModal');
+  const video = document.getElementById('playerVideo');
+  if(!modal || !video) return;
+  video.src = url;
+  document.getElementById('playerTitle').textContent = nome || 'Stream simulado';
+  modal.style.display = 'flex';
+}
+
+function baixarCanaisM3u(){ baixarPainel('/api/channels/m3u'); }
+function copiarLinkCanaisM3u(){
+  const q=(document.getElementById('chSearch').value||''), prov=(document.getElementById('chProvider').value||''), qual=(document.getElementById('chQuality').value||'');
+  const url = location.origin + '/api/channels/m3u' + (q?`?q=${encodeURIComponent(q)}`:'');
+  copiarTexto(url);
+}
+
+// ===== STREAMS =====
+let _streams = [];
+async function loadStreams(){
+  const d = await get('/api/streams');
+  _streams = d.streams || [];
+  document.getElementById('streamsGrid').innerHTML = _streams.map(s=>{
+    const tipoTag = s.type==='drm'?'<span class="tag red">DRM</span>':(s.type==='fast'?'<span class="tag green">FAST</span>':'<span class="tag blue">YOUTUBE</span>');
+    const [w,h] = (s.resolution||'1280x720').split('x');
+    const resLabel = h >= 1080 ? 'FHD' : (h >= 720 ? 'HD' : 'SD');
+    const url = s.full_url || (CORE + s.url);
+    return `
+    <div class="panel" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-weight:600">${esc(s.name)}</div>${tipoTag}
+      </div>
+      <div class="muted" style="margin-bottom:8px">Resolução: ${w}x${h} (${resLabel}) · HLS sintético</div>
+      <div class="console" style="font-size:10px;padding:8px;max-height:44px;overflow:hidden;word-break:break-all;color:var(--muted)">${esc(url)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn gold sm" onclick='abrirVlc(${JSON.stringify(url)},${JSON.stringify(s.name)})'>▶ Abrir no VLC</button>
+        <button class="btn sm" onclick='abrirPlayer(${JSON.stringify(url)},${JSON.stringify(s.id)})'>▶ Player</button>
+        <button class="btn sm" onclick='copiarTexto(${JSON.stringify(url)})'>🔗 Copiar</button>
+        <button class="btn sm" onclick='baixarM3uUnico(${JSON.stringify(url)})'>⬇ .m3u</button>
+      </div>
+      <div id="player-${s.id}" style="margin-top:10px;display:none"></div>
+    </div>`;
+  }).join('') || '<div class="muted">Nenhum stream gerado. Rode: python gerar_streams.py</div>';
+}
+function abrirVlc(url, name){
+  // Não usa protocolo vlc:// (não registrado no Windows -> abria aba em branco).
+  // Em vez disso baixa um .m3u real com o nome do canal, que o VLC abre (associado a .m3u).
+  name = name || 'Stream Simulado DEFENSE-LAB';
+  const content = `#EXTM3U\n#EXTINF:-1,${name}\n${url}\n`;
+  const blob = new Blob([content], {type:'audio/x-mpegurl'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (name.replace(/[^\w\-]+/g,'_') || 'stream_simulado') + '.m3u';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+  toast('.m3u baixado — abra o arquivo para reproduzir no VLC');
+}
+function baixarM3uUnico(url){
+  // baixa um .m3u apontando para o stream (abre no VLC associado a .m3u)
+  const content = `#EXTM3U\n#EXTINF:-1,Stream Simulado DEFENSE-LAB\n${url}\n`;
+  const blob = new Blob([content], {type:'audio/x-mpegurl'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stream_simulado.m3u';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  toast('.m3u baixado — abra no VLC');
+}
+function abrirPlayer(url, id){
+  const box = document.getElementById('player-'+id);
+  if(!box){ toast('Player indisponível'); return; }
+  box.style.display = box.style.display==='none'?'block':'none';
+  if(box.innerHTML === ''){
+    box.innerHTML = `<video controls autoplay muted style="width:100%;border-radius:6px;background:#000" src="${esc(url)}"></video>
+      <div class="muted" style="margin-top:6px">Se o player não suportar HLS, use "▶ Abrir no VLC" ou "⬇ .m3u".</div>`;
+  }
+}
+function baixarPlaylist(){
+  baixarUrl('get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts');
+}
+function copiarLinkPlaylist(){
+  copiarTexto(CORE + '/get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts');
+}
+
+// ===== VPS =====
+async function loadVps(){
+  const d = await get('/api/vps');
+  document.getElementById('vpsBadge').textContent = (d.servers||[]).length;
+  document.getElementById('vpsTable').innerHTML = (d.servers||[]).map(v=>`
+    <tr>
+      <td>${esc(v.name)}</td><td class="mono">${esc(v.ip)}</td><td>${v.ssh_port}</td>
+      <td class="mono">${esc(v.web_path)}</td><td>${esc(v.token||'Teste')}</td><td>${statusTag(v.status)}</td>
+      <td>
+        <button class="btn sm" onclick='deployVps("${v.id}")'>Deploy</button>
+        <button class="btn sm" onclick='vpsForm(${JSON.stringify(v)})'>Editar</button>
+        <button class="btn sm red" onclick='excluirVps("${v.id}")'>🗑️</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">Nenhuma VPS.</td></tr>';
+}
+function vpsForm(v){
+  v = v || {};
+  openModal(v.id?'✏️ Editar VPS':'＋ Nova VPS',
+    `<div class="fld"><label>Nome</label><input id="mName" value="${esc(v.name||'')}" placeholder="ex.: teste"></div>
+     <div class="fld"><label>IP</label><input id="mIp" value="${esc(v.real_ip||v.ip||'')}" placeholder="ex.: 198.51.100.10"></div>
+     <div class="fld"><label>Porta SSH</label><input id="mSsh" type="number" value="${v.ssh_port||22}"></div>
+     <div class="fld"><label>Web Path</label><input id="mPath" value="${esc(v.web_path||'/var/www/html/directv/')}"></div>
+     <div class="fld"><label>Token</label><input id="mToken" value="${esc(v.token||'Teste')}"></div>
+     <div class="fld"><label>Status</label><select id="mStatus"><option value="active" ${v.status!=='inactive'?'selected':''}>active</option><option value="inactive" ${v.status==='inactive'?'selected':''}>inactive</option></select></div>`,
+    async ()=>{
+      const body = {name:fldId('mName'), real_ip:fldId('mIp'), ip:fldId('mIp'), ssh_port:fldId('mSsh'), web_path:fldId('mPath'), token:fldId('mToken'), status:fldId('mStatus')};
+      if(!body.name){ toast('Informe o nome da VPS.'); return; }
+      const d = v.id ? await put('/api/vps/'+v.id, body) : await post('/api/vps', body);
+      closeModal(); toast(d.ok ? (d.message||'VPS salva.') : (d.error||'Erro')); loadVps(); loadDashboard();
+    });
+}
+async function excluirVps(id){
+  if(!confirm('Excluir esta VPS?')) return;
+  const d = await del('/api/vps/'+id);
+  toast(d.ok ? d.message : (d.error||'Erro')); loadVps();
+}
+async function deployVps(id){
+  const d = await post(`/api/vps/${id}/deploy`);
+  if(d.ok){
+    toast('Deploy concluído (simulado)!');
+    const logHtml = (d.log||[]).map(l=>`<div class="l"><span class="ts">[${l.ts}]</span> <span class="info">${l.level}</span> ${l.msg}</div>`).join('');
+    openModal('📦 Deploy (simulado)', `<div class="console" style="max-height:220px">${logHtml}</div>`, ()=>closeModal());
+  } else toast(d.error||'Erro no deploy');
+}
+function baixarListaXui(){ baixarPainel('/api/vps/xui-list'); }
+
+// ===== YOUTUBE =====
+let _yt = [];
+async function loadYoutube(){
+  const d = await get('/api/youtube');
+  _yt = d.channels || [];
+  document.getElementById('ytBadge').textContent = _yt.length;
+  document.getElementById('ytTotal').textContent = _yt.length + ' canais registrados';
+  renderYoutube();
+}
+function renderYoutube(){
+  const q = (document.getElementById('ytSearch').value||'').toLowerCase();
+  const list = _yt.filter(c=>!q || c.name.toLowerCase().includes(q) || c.handle.toLowerCase().includes(q));
+  document.getElementById('ytTable').innerHTML = list.map(c=>`
+    <tr>
+      <td><div class="logobadge">▶</div></td>
+      <td>${esc(c.name)}</td><td class="mono">${esc(c.handle)}</td><td>${esc(c.category)}</td>
+      <td><span class="live-dot ${c.live==='ONLINE'?'on':'off'}"></span>${esc(c.live)}</td><td>${esc(c.broadcast)}</td>
+      <td>
+        <button class="btn sm" onclick='testarYt("${c.id}")'>Testar</button>
+        <button class="btn sm" onclick='xuiLinkYt("${c.id}")'>XUI Link</button>
+        <button class="btn sm red" onclick='excluirYt("${c.id}")'>🗑️</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" class="muted">Nenhum canal.</td></tr>';
+}
+function ytForm(){
+  openModal('＋ Novo Canal YouTube',
+    `<div class="fld"><label>Nome</label><input id="mName" placeholder="ex.: CazéTV Ao Vivo"></div>
+     <div class="fld"><label>Handle</label><input id="mHandle" placeholder="ex.: @CazeTV"></div>
+     <div class="fld"><label>Categoria</label><input id="mCat" placeholder="ex.: Esportes"></div>
+     <div class="fld"><label>Status</label><select id="mLive"><option value="OFFLINE">OFFLINE</option><option value="ONLINE">ONLINE</option></select></div>
+     <div class="fld"><label>Transmissão atual</label><input id="mBroad" placeholder="ex.: Monaco x Lille"></div>`,
+    async ()=>{
+      const body = {name:fldId('mName'), handle:fldId('mHandle'), category:fldId('mCat'), live:fldId('mLive'), broadcast:fldId('mBroad')};
+      if(!body.name){ toast('Informe o nome.'); return; }
+      const d = await post('/api/youtube', body);
+      closeModal(); toast(d.ok ? d.message : (d.error||'Erro')); loadYoutube();
+    });
+}
+async function testarYt(id){
+  const d = await post(`/api/youtube/${id}/test`);
+  if(d.ok){
+    openModal('🧪 Teste de canal', `<div class="kv"><b>Canal</b><span>${esc(d.channel)}</span></div><div class="kv"><b>Status</b><span>${esc(d.live)}</span></div>${d.stream_url?`<div class="kv"><b>Stream</b><span class="mono" style="word-break:break-all">${esc(d.stream_url)}</span></div><div style="margin-top:10px"><button class="btn gold sm" onclick='abrirVlc(${JSON.stringify(d.stream_url)},${JSON.stringify(d.channel)})'>▶ Abrir no VLC</button> <button class="btn sm" onclick='copiarTexto(${JSON.stringify(d.stream_url)})'>🔗 Copiar</button></div>`:'<div class="muted mt8">Canal offline — sem stream.</div>'}`, ()=>closeModal());
+  } else toast(d.error||'Erro');
+}
+async function xuiLinkYt(id){
+  const d = await post(`/api/youtube/${id}/xui-link`);
+  if(d.ok){
+    openModal('🔗 XUI Link', `<div class="muted">Link pronto para colar no XUI One / VLC (simulado):</div><div class="console mt8" style="word-break:break-all">${esc(d.link)}</div>`, ()=>{ copiarTexto(d.link); closeModal(); });
+  } else toast(d.error||'Erro');
+}
+async function excluirYt(id){
+  if(!confirm('Excluir este canal?')) return;
+  const d = await del('/api/youtube/'+id);
+  toast(d.ok ? d.message : (d.error||'Erro')); loadYoutube();
+}
+async function verificarLives(){
+  const d = await post('/api/youtube/verify-lives');
+  toast(d.ok ? 'Lives verificadas (simulado)!' : 'Erro');
+  loadYoutube();
+}
+function baixarYoutubeM3u(){ baixarPainel('/api/youtube/m3u'); }
+
+// ===== CFG =====
+async function loadCfg(){
+  const d = await get('/api/cfg');
+  document.getElementById('cfgTable').innerHTML = (d.files||[]).map(f=>`
+    <tr><td class="mono">${esc(f.filename)}</td><td>${esc(f.size)}</td><td><button class="btn sm" onclick='baixarCfg("${esc(f.filename)}")'>⬇</button></td></tr>`).join('');
+  document.getElementById('cfgStats').innerHTML = Object.entries(d.stats||{}).map(([k,v])=>`
+    <div class="trava" style="margin-bottom:8px"><div class="top"><span class="mod">${esc(k)}</span></div>
+    <div class="lab">Canais: ${v.channels}${v.drm_channels?' · DRM: '+v.drm_channels:''}${v.with_keys?' · Com chaves: '+v.with_keys:''}</div></div>`).join('');
+}
+async function gerarCfgTodos(){
+  const provs = [];
+  if(document.getElementById('cfgSky').checked) provs.push('SkyPlus');
+  if(document.getElementById('cfgGlobo').checked) provs.push('GloboPlay');
+  if(document.getElementById('cfgRecord').checked) provs.push('RecordPlus');
+  if(!provs.length){ toast('Marque ao menos um provedor.'); return; }
+  const client = fldId('cfgClient') || 'teste';
+  toast('Gerando CFGs (simulado)...');
+  for(const p of provs){
+    const d = await post('/api/cfg/generate', {provider:p, client, quality:'HD_PT'});
+    if(!d.ok) toast('Erro ao gerar ' + p);
+  }
+  toast('CFGs gerados!');
+  loadCfg();
+}
+function baixarCfg(fname){ baixarPainel('/api/cfg/download/' + encodeURIComponent(fname)); }
+
+// ===== DEPLOY =====
+async function loadDeploy(){
+  const d = await get('/api/deploy');
+  document.getElementById('deployDir').textContent = d.directory || '';
+  document.getElementById('deployConsole').innerHTML = (d.logs||[]).map(l=>{
+    const cls = l.level==='INFO'?'info':(l.level==='ERROR'?'err':'ok');
+    return `<div class="l"><span class="ts">[${l.ts}]</span> <span class="${cls}">${l.level}</span> ${esc(l.msg)}</div>`;
+  }).join('');
+}
+
+// ===== ALERTS =====
+async function loadAlerts(){
+  const d = await get('/api/alerts');
+  document.getElementById('alertBadge').textContent = (d.alerts||[]).length;
+  document.getElementById('alertCount').textContent = (d.alerts||[]).length + ' alertas';
+  document.getElementById('alertsList').innerHTML =
+    (d.alerts||[]).length === 0 ? '<div class="muted">Nenhum alerta.</div>' :
+    d.alerts.slice(0,60).map(a=>`
+      <div class="alert-item ${a.severity==='CRITICO'?'':'high'}">
+        <div class="a1">${sevTag(a.severity)} [${a.rule}] ${esc(a.rule_name)}</div>
+        <div class="a2">${esc(a.detail)}</div>
+        <div class="a2">Conta: ${esc(a.account)} · IP <span class="mono">${esc(a.ip)}</span> (${esc(a.city)}) · ${esc(a.ts)}</div>
+      </div>`).join('');
+  document.getElementById('rulesList').innerHTML = (d.rules||[]).map(r=>`
+    <div class="trava"><div class="top"><span class="mod">${esc(r.id)} — ${esc(r.name)}</span> ${sevTag(r.severity)}</div>
+    <div class="lab">${esc(r.desc)}</div></div>`).join('');
+}
+
+// ===== TRAVA MAP =====
+async function loadTrava(){
+  const d = await get('/api/trava_map');
+  document.getElementById('travaList').innerHTML = (d.modules||[]).map(m=>`
+    <div class="trava">
+      <div class="top"><span class="mod">${esc(m.module)}</span> ${sevTag(m.severity)}</div>
+      <div class="kv"><b>👁️ Visão do atacante</b><span>${esc(m.attacker_view)}</span></div>
+      <div class="kv"><b>🚩 Indicador</b><span>${esc(m.ioc)}</span></div>
+      <div class="kv"><b>🛡️ Trava defensiva</b><span style="color:var(--gold2)">${esc(m.defense)}</span></div>
+    </div>`).join('');
+}
+
+// ===== PROVEDORES (CRUD) =====
+let _providers = [];
+async function loadAuthProviders(){
+  const d = await get('/api/providers');
+  _providers = d.providers || [];
+  const sel = document.getElementById('authProvider');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecione o provedor —</option>' + _providers.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  if(cur) sel.value = cur;
+  // auto-flow select
+  const af = document.getElementById('afProvider');
+  af.innerHTML = '<option value="">— Selecione o provedor —</option>' + _providers.map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  renderProviders();
+}
+function renderProviders(){
+  document.getElementById('providersList').innerHTML = _providers.map(p=>`
+    <div class="trava" style="margin-bottom:8px">
+      <div class="top"><span class="mod">${esc(p.name)}</span> <span class="tag ${p.drm==='Widevine L3'?'red':'green'}">${esc(p.drm)}</span></div>
+      <div class="lab">
+        <div>Canais: ${p.total_channels} · ${esc(p.desc||'')}</div>
+        <span class="srv-link">🔗 Servidor: ${esc(p.server)}</span>
+        <div class="mt8" style="display:flex;gap:6px">
+          <button class="btn sm" onclick='copiarTexto(${JSON.stringify(p.server)})'>🔗 Copiar link</button>
+          <button class="btn sm" onclick='providerForm(${JSON.stringify(p)})'>Editar</button>
+          <button class="btn sm red" onclick='excluirProvider("${p.id}")'>🗑️</button>
+        </div>
+      </div>
+    </div>`).join('') || '<div class="muted">Nenhum provedor cadastrado.</div>';
+}
+function authProviderChanged(){
+  const name = document.getElementById('authProvider').value;
+  const p = _providers.find(x=>x.name===name);
+  const el = document.getElementById('authServer');
+  if(p){ el.placeholder = p.server || 'http://127.0.0.1:8484'; }
+  else { el.placeholder = 'http://127.0.0.1:8484'; }
+}
+function providerForm(p){
+  p = p || {};
+  openModal(p.id?'✏️ Editar provedor':'＋ Cadastrar provedor',
+    `<div class="fld"><label>Nome do provedor</label><input id="mName" value="${esc(p.name||'')}" placeholder="ex.: Meu Provedor Teste"></div>
+     <div class="fld"><label>Servidor (domínio ou IP:porta)</label><input id="mServer" value="${esc(p.server||'')}" placeholder="ex.: 151.240.100.202:8484 ou painel.meucliente.com"></div>
+     <div class="muted" style="margin-top:-6px">Deixe vazio para gerar subdomínio automático (<span class="mono">meu-provedor.defense-lab.net</span>). Digite o IP/domínio da VPS para conectar de verdade.</div>
+     <div class="fld"><label>Total de canais</label><input id="mCh" type="number" value="${p.total_channels||50}"></div>
+     <div class="fld"><label>DRM</label><select id="mDrm">
+        <option value="Sem DRM" ${p.drm==='Sem DRM'?'selected':''}>Sem DRM</option>
+        <option value="Widevine L3" ${p.drm==='Widevine L3'?'selected':''}>Widevine L3</option>
+        <option value="Widevine L3 / ClearKey" ${p.drm==='Widevine L3 / ClearKey'?'selected':''}>Widevine L3 / ClearKey</option>
+     </select></div>
+     <div class="fld"><label>Descrição</label><textarea id="mDesc">${esc(p.desc||'')}</textarea></div>`,
+    async ()=>{
+      const body = {name:fldId('mName'), server:fldId('mServer'), total_channels:fldId('mCh'), drm:fldId('mDrm'), desc:fldId('mDesc')};
+      if(!body.name){ toast('Informe o nome do provedor.'); return; }
+      const d = p.id ? await put('/api/providers/'+p.id, body) : await post('/api/providers', body);
+      closeModal(); toast(d.ok ? (d.message||'Provedor salvo.') : (d.error||'Erro')); loadAuthProviders();
+    });
+}
+async function excluirProvider(id){
+  if(!confirm('Excluir este provedor?')) return;
+  const d = await del('/api/providers/'+id);
+  toast(d.ok ? d.message : (d.error||'Erro')); loadAuthProviders();
+}
+
+// ===== CONTAS (CRUD) =====
+function scenarioBadge(a){
+  const map = {
+    ok: '<span class="tag green">LOGIN OK</span>',
+    expired: '<span class="tag amber">EXPIRADA</span>',
+    blocked: '<span class="tag red">BLOQUEADA</span>',
+    limit_screens: '<span class="tag amber">LIMITE DE TELAS</span>',
+    geo_anomaly: '<span class="tag gold">GEO ANOMALIA</span>',
+  };
+  return map[a.scenario] || '<span class="tag blue">TESTE</span>';
+}
+async function loadAuthAccounts(){
+  const d = await get('/api/auth/accounts');
+  const accs = d.accounts || [];
+  document.getElementById('accBadge').textContent = accs.length;
+  document.getElementById('authAccounts').innerHTML = accs.map(a=>`
+    <div class="trava" style="margin-bottom:8px">
+      <div class="top"><span class="mod mono">${esc(a.username)}</span> ${scenarioBadge(a)}</div>
+      <div class="lab">
+        <div style="color:var(--gold2);font-weight:600">🏢 Provedor: ${esc(a.provider)}</div>
+        <div>Senha: <span class="mono">${esc(a.password)}</span></div>
+        <div>Plano: ${esc(a.plan)} · Expira: ${esc(a.expiry)} · Telas: ${a.max_devices}</div>
+        <div style="color:var(--muted)">💡 ${esc(a.note)}</div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <button class="btn sm gold" onclick='useAccount(${JSON.stringify(a)})'>Usar</button>
+        <button class="btn sm" onclick='accountForm(${JSON.stringify(a)})'>Editar</button>
+        <button class="btn sm red" onclick='excluirAccount("${esc(a.username)}")'>🗑️</button>
+      </div>
+    </div>`).join('') || '<div class="muted">DEFENSE-CORE offline — rode o iniciar.bat.</div>';
+}
+function useAccount(a){
+  document.getElementById('authProvider').value = a.provider;
+  authProviderChanged();
+  document.getElementById('authUser').value = a.username;
+  document.getElementById('authPass').value = a.password;
+  toast('Provedor ' + a.provider + ' + conta ' + a.username + ' preenchidos — clique em Conectar');
+}
+function accountForm(a){
+  a = a || {};
+  const provs = _providers.map(p=>`<option value="${esc(p.name)}" ${p.name===a.provider?'selected':''}>${esc(p.name)}</option>`).join('');
+  const scen = (val,label)=>`<option value="${val}" ${a.scenario===val?'selected':''}>${label}</option>`;
+  openModal(a.username?'✏️ Editar conta':'＋ Nova conta',
+    `<div class="fld"><label>Usuário</label><input id="mUser" value="${esc(a.username||'')}" placeholder="ex.: demo.valido"></div>
+     <div class="fld"><label>Senha</label><input id="mPass" value="${esc(a.password||'')}" placeholder="senha"></div>
+     <div class="fld"><label>Provedor</label><select id="mProv">${provs}</select></div>
+     <div class="fld"><label>Plano</label><input id="mPlan" value="${esc(a.plan||'Plano Padrão')}"></div>
+     <div class="fld"><label>Expira (YYYY-MM-DD)</label><input id="mExp" value="${esc(a.expiry||'2027-12-31')}"></div>
+     <div class="fld"><label>Máx. telas</label><input id="mDev" type="number" value="${a.max_devices||3}"></div>
+     <div class="fld"><label>Cenário (resposta do servidor)</label><select id="mScen">
+        ${scen('ok','Login OK')}${scen('expired','Expirada')}${scen('blocked','Bloqueada')}${scen('limit_screens','Limite de telas')}${scen('geo_anomaly','Geo anomalia')}
+     </select></div>
+     <div class="fld"><label>Nota</label><input id="mNote" value="${esc(a.note||'')}"></div>`,
+    async ()=>{
+      const body = {username:fldId('mUser'), password:fldId('mPass'), provider:fldId('mProv'), plan:fldId('mPlan'), expiry:fldId('mExp'), max_devices:fldId('mDev'), scenario:fldId('mScen'), note:fldId('mNote')};
+      if(!body.username || !body.password){ toast('Usuário e senha são obrigatórios.'); return; }
+      const d = a.username ? await put('/api/auth/accounts/'+encodeURIComponent(a.username), body) : await post('/api/auth/accounts', body);
+      closeModal(); toast(d.ok ? (d.message||'Conta salva.') : (d.error||'Erro')); loadAuthAccounts();
+    });
+}
+async function excluirAccount(username){
+  if(!confirm('Excluir a conta ' + username + '?')) return;
+  const d = await del('/api/auth/accounts/'+encodeURIComponent(username));
+  toast(d.ok ? d.message : (d.error||'Erro')); loadAuthAccounts();
+}
+function clearAuth(){
+  document.getElementById('authProvider').value='';
+  document.getElementById('authUser').value='';
+  document.getElementById('authPass').value='';
+  document.getElementById('authResult').innerHTML='';
+  authProviderChanged();
+}
+
+// ===== LOGIN =====
+let _authLog = [];
+function authLogLine(msg, cls){
+  const ts = new Date().toTimeString().slice(0,8);
+  _authLog.unshift({ts, msg, cls});
+  renderAuthLog();
+}
+function renderAuthLog(){
+  document.getElementById('authLog').innerHTML = _authLog.slice(0,40).map(l=>
+    `<div class="l"><span class="ts">[${l.ts}]</span> <span class="${l.cls}">${esc(l.msg)}</span></div>`).join('')
+    || '<div class="muted">Nenhuma tentativa ainda.</div>';
+}
+async function doLogin(){
+  const provider = document.getElementById('authProvider').value;
+  const username = document.getElementById('authUser').value.trim();
+  const password = document.getElementById('authPass').value;
+  const server = document.getElementById('authServer').value.trim();
+  const device_id = 'DEV-' + Math.random().toString(36).slice(2,10).toUpperCase();
+  if(!username || !password){
+    document.getElementById('authResult').innerHTML = '<div class="alert-item high"><div class="a1">⚠️ Preencha usuário e senha.</div></div>';
+    return;
+  }
+  document.getElementById('authResult').innerHTML = `<div class="muted">Conectando a <b>${esc(server||'servidor do provedor')}</b> com o usuário <b>${esc(username)}</b>...</div>`;
+  authLogLine(`Tentando login: ${username} → ${server||'(servidor do provedor)'}`, 'info');
+  const d = await post('/api/auth/login', {username, password, device_id, provider, server});
+  if(d.ok){
+    document.getElementById('authResult').innerHTML = `
+      <div style="border-left:3px solid var(--green);background:var(--panel2);padding:12px;border-radius:6px">
+        <div class="a1" style="color:var(--green)">✅ Login bem-sucedido</div>
+        <div class="kv" style="margin-top:8px"><b>🏢 Provedor</b><span style="color:var(--gold2);font-weight:600">${esc(d.provider)}</span></div>
+        <div class="kv"><b>Servidor</b><span class="mono" style="word-break:break-all">${esc(d.server)}</span></div>
+        <div class="kv"><b>Plano</b><span>${esc(d.plan)}</span></div>
+        <div class="kv"><b>Expira</b><span>${esc(d.expiry)}</span></div>
+        <div class="kv"><b>Dispositivos</b><span>${d.current_devices}/${d.max_devices} conectados · este aparelho: <span class="mono">${esc(d.device_id||device_id)}</span></span></div>
+        <div class="kv"><b>Canais</b><span>${d.channels_available}</span></div>
+        <div class="kv"><b>Sessão</b><span class="mono">${esc(d.session_token)}</span></div>
+        <div class="kv"><b>Playlist</b><span class="mono" style="word-break:break-all">${esc(d.playlist)}</span></div>
+        ${d.warning?`<div class="a2" style="color:var(--amber);margin-top:8px">⚠️ ${esc(d.warning)}</div>`:''}
+        ${d.captured?`<div style="color:var(--red);margin-top:10px;border:1px dashed var(--red);padding:10px;border-radius:6px;background:rgba(255,80,80,0.06)">
+          🎯 <b>TOKEN CAPTURADO (simulação)</b><br>
+          <span style="font-size:13px">O módulo <b>DEFENSE</b> — agindo como o pirata — capturou o token <span class="mono">${esc(d.captured_token_id)}</span> e o armazenou no <b>Vault de Tokens</b>. Alerta <b>RULE-007</b> disparado.</span>
+        </div>`:''}
+      </div>`;
+    authLogLine('Login OK: ' + username + ' (' + d.provider + ')', 'ok');
+  }else{
+    const isHard = ['senha_incorreta','conta_bloqueada','usuario_nao_encontrado'].includes(d.error);
+    document.getElementById('authResult').innerHTML = `
+      <div style="border-left:3px solid var(--red);background:var(--panel2);padding:12px;border-radius:6px">
+        <div class="a1" style="color:var(--red)">❌ Falha na autenticação</div>
+        <div class="a2" style="margin-top:6px">${esc(d.message)}</div>
+      </div>`;
+    authLogLine('Falha: ' + username + ' — ' + d.message, isHard?'err':'info');
+  }
+  loadDashboard(); loadAlerts(); loadTokens();
+}
+
+// ===== AUTO-FLOW =====
+let _afPoll = null;
+async function afProviderChanged(){
+  const prov = document.getElementById('afProvider').value;
+  const d = await get('/api/auth/accounts');
+  const accs = (d.accounts||[]).filter(a=>!prov || a.provider===prov);
+  const sel = document.getElementById('afUser');
+  sel.innerHTML = '<option value="">— Selecione a conta (ou deixe automático) —</option>' +
+    accs.map(a=>`<option value="${esc(a.username)}">${esc(a.username)} (${esc(a.provider)})</option>`).join('');
+}
+async function startAutoflow(){
+  const provider = document.getElementById('afProvider').value;
+  const username = document.getElementById('afUser').value || 'demo';
+  if(!provider){ toast('Selecione o provedor primeiro.'); return; }
+  const d = await post('/api/autoflow/start', {provider, username});
+  if(d && d.ok){
+    toast('Auto-Flow iniciado!');
+    loadAutoflowStatus();
+    if(_afPoll) clearInterval(_afPoll);
+    _afPoll = setInterval(loadAutoflowStatus, 1200);
+  }else toast((d&&d.message)||'Erro ao iniciar');
+}
+function stopAutoflow(){ if(_afPoll){ clearInterval(_afPoll); _afPoll=null; } toast('Auto-Flow parado.'); }
+function renderAutoflowSteps(steps){
+  return steps.map((s,i)=>{
+    const ico = s.status==='done' ? '✅' : (s.status==='running' ? '⏳' : '⬜');
+    return `<div class="trava" style="margin-bottom:6px">
+      <div class="top"><span class="mod mono">${i+1}.</span> ${ico} ${esc(s.label)}</div>
+      ${s.status==='running' ? '<div class="lab" style="color:var(--gold2)">executando...</div>' : ''}
+    </div>`;
+  }).join('') || '<div class="muted">Nenhum fluxo iniciado.</div>';
+}
+async function loadAutoflowStatus(){
+  const d = await get('/api/autoflow/status');
+  if(!d) return;
+  document.getElementById('autoflowSteps').innerHTML = renderAutoflowSteps(d.steps||[]);
+  const statusHtml = d.running
+    ? `<div style="border-left:3px solid var(--gold2);padding:10px;background:var(--panel2);border-radius:6px"><span class="a1" style="color:var(--gold2)">⏳ Fluxo em execução...</span><div class="muted" style="margin-top:4px">Provedor: ${esc(d.provider||'-')} · Usuário: ${esc(d.username||'-')}</div></div>`
+    : (d.finished
+        ? `<div style="border-left:3px solid var(--green);padding:10px;background:var(--panel2);border-radius:6px"><span class="a1" style="color:var(--green)">✅ Fluxo concluído</span><div class="muted" style="margin-top:4px">Provedor: ${esc(d.provider||'-')} · Usuário: ${esc(d.username||'-')}</div></div>`
+        : `<div class="muted">Aguardando início.</div>`);
+  document.getElementById('autoflowStatus').innerHTML = statusHtml;
+  document.getElementById('autoflowLog').innerHTML = (d.log||[]).map(l=>
+    `<div class="l"><span class="ts">${esc(l.ts)}</span> <span class="${(l.level||'').toLowerCase()==='err'?'err':(l.level==='OK'?'ok':'info')}">${esc(l.level)}</span> ${esc(l.msg)}</div>`
+  ).join('') || '<div class="muted">Sem log.</div>';
+  if(!d.running && _afPoll){ clearInterval(_afPoll); _afPoll=null; }
+}
+
+// ===== ROTAÇÃO =====
+async function rotateTokens(){
+  const d = await post('/api/rotate');
+  if(d && d.ok){
+    toast('Tokens rotacionados! O painel vai detectar e re-sincronizar.');
+    loadLiveTokens(); loadSync();
+  } else toast('DEFENSE-CORE offline? Não foi possível rotacionar.');
+}
+async function loadLiveTokens(){
+  const d = await get('/api/live_tokens');
+  document.getElementById('rotateRev').textContent = 'rev.' + (d.revision||0);
+  document.getElementById('rotateLast').textContent = d.last_rotate || '--';
+  document.getElementById('rotateCount').textContent = d.rotate_count || 0;
+  document.getElementById('liveTokens').innerHTML = (d.tokens||[]).map(t=>
+    `<tr><td>${esc(t.channel)}</td><td class="mono" style="font-size:11px">${esc(t.token)}</td><td class="mono" style="font-size:11px;color:var(--gold)">${esc(t.kid_key||'—')}</td><td>${esc(t.drm)}</td></tr>`
+  ).join('') || '<tr><td colspan="4" class="muted">DEFENSE-CORE offline.</td></tr>';
+}
+async function loadSync(){
+  const d = await get('/api/token_sync');
+  document.getElementById('syncStatus').innerHTML =
+    `<span style="color:var(--green)">● ${esc(d.status==='monitorando'?'Monitorando DEFENSE-CORE...':d.status)}</span>
+     <div class="muted" style="margin-top:4px">Última mudança: ${esc(d.last_change||'nenhuma')} · Rotações detectadas: ${d.revisions_detected||0}</div>`;
+  document.getElementById('syncHistory').innerHTML = (d.history||[]).slice(0,8).map(h=>
+    `<div class="trava" style="margin-bottom:5px"><div class="top"><span class="mod">rev.${h.from_rev} → rev.${h.to_rev}</span></div><div class="lab muted">${esc(h.ts)}</div></div>`
+  ).join('') || '<div class="muted">Nenhuma rotação detectada ainda.</div>';
+}
+
+// INIT
+loadDashboard(); loadAuthProviders(); loadAuthAccounts(); loadTokens(); loadAlerts(); loadChannels();
+loadVps(); loadYoutube(); loadCfg(); loadDeploy(); loadTrava();
+setInterval(()=>{ loadDashboard(); loadAlerts(); }, 5000);
+setInterval(()=>{ loadLiveTokens(); loadSync(); }, 6000);
+</script>
+</body>
+</html>

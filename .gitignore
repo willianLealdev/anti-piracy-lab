@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.log
+*.zip
+streams/
+output/cfgs/*
+!output/cfgs/.gitkeep
+deploy-vps/
