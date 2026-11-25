@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://plutotv.defense-lab.net"
-      PROVIDER_FILTER: "plutotv"
+      PUBLIC_URL: "http://soultv.defense-lab.net"
+      PROVIDER_FILTER: "soultv"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
