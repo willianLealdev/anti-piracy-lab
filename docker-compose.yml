@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://hbomax.defense-lab.net"
-      PROVIDER_FILTER: "hbomax"
+      PUBLIC_URL: "http://disneyplus.defense-lab.net"
+      PROVIDER_FILTER: "disneyplus"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
