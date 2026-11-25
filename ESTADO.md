@@ -1,5 +1,16 @@
 # ESTADO — AntiPiracy Defense Lab
 
+## ÚLTIMA ATUALIZAÇÃO (25/11/2026)
+- Adaptador Xtream Codes testado contra painel REAL do cliente (fontez22.ddns.net, autorizado): 39 categorias + 1.617 canais ao vivo + 19.926 filmes + 10.380 séries.
+- Corrigido: categorias vinham como ID numérico -> agora resolvidas por NOME (ex.: "⚽ REDE SPORTV").
+- Corrigido: qualidade extraída do nome do canal (SD/HD/FHD/4K/HEVC).
+- Corrigido: login Xtream otimizado (~2s; não conta mais VOD/séries na autenticação).
+- Corrigido: botão "Capturar" funciona no Xtream (link direto /live/user/pass/id.ts + salva no Vault).
+- Corrigido: "Baixar/Copiar link M3U" por canal gera M3U de UM canal só; botão "▶ Player" por canal.
+- Arquitetura real do painel do cliente: fontez22.ddns.net (77.42.119.223) -> stream via 46.4.103.55 com token; get.php entrega links via goserv.online.
+
+# ESTADO — AntiPiracy Defense Lab
+
 ## Visão geral
 - Sistema DEFENSIVO de demonstração (dados 100% sintéticos).
 - NÃO extrai DRM real, NÃO captura token real, NÃO retransmite conteúdo protegido.
