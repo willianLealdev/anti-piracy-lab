@@ -4,33 +4,16 @@ services:
     command: python core_server.py
     environment:
       HOST: "0.0.0.0"
-      PORT: "8484"
-      PUBLIC_URL: "http://173.249.14.170:8484"
+      PORT: "8080"
+      PUBLIC_URL: "http://173.249.14.170:8080"
+    ports:
+      - "8080:8080"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8484/health', timeout=3)"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  painel:
-    build: .
-    command: python app.py
-    environment:
-      HOST: "0.0.0.0"
-      PORT: "80"
-      CORE_URL: "http://core:8484"
-      PUBLIC_URL: "https://servidor-tv-sky-servidor-tv-sky.sbporu.easypanel.host"
-    volumes:
-      - panel_data:/app/data
-    depends_on:
-      - core
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:80/api/ping', timeout=3)"]
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,4 +21,3 @@ services:
 volumes:
   core_data:
   core_streams:
-  panel_data:
