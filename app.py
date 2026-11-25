@@ -464,7 +464,30 @@ _state = {
     # Cada login bem-sucedido gera um token real e o DEFENSE o captura aqui,
     # simulando o comportamento de um sistema pirata (sem nenhum dado real).
     "token_vault": [],
+    "connected_provider": None,  # provedor conectado (filtra streams/tokens)
 }
+
+# Mapeia cada stream simulado ao provedor correspondente, para o painel
+# mostrar SOMENTE os canais do provedor conectado (nada de tudo junto).
+_STREAM_PROVIDER_BY_NAME = {
+    "Globo RJ (SIMULADO)": "GloboPlay Completo",
+    "Telecine Action (SIMULADO)": "Sky+ (DirectvGO)",
+    "SporTV 1 (SIMULADO)": "Sky+ (DirectvGO)",
+    "Pluto Filmes (SIMULADO)": "Pluto TV Brasil",
+    "Soul TV MG (SIMULADO)": "Soul TV Brasil",
+    "Record SP (SIMULADO)": "Record+ / PlayPlus",
+    "CazeTV Ao Vivo (SIMULADO)": "YouTube Live",
+    "SBT News 24h (SIMULADO)": "YouTube Live",
+}
+
+
+def _filter_by_connected_provider(items, key):
+    """Retorna só os itens do provedor conectado. Sem conexão => vazio (zerado)."""
+    prov = _state.get("connected_provider")
+    if not prov:
+        return []
+    return [it for it in items if _STREAM_PROVIDER_BY_NAME.get(it.get(key), "?") == prov]
+
 
 _alert_templates = [
     ("RULE-001", "Compartilhamento de token", "Token compartilhado entre 4 IPs em 3 min", "CRITICO"),
@@ -755,7 +778,10 @@ def api_streams_proxy():
     """Lista os streams sintéticos reproduzíveis (proxy para o DEFENSE-CORE)."""
     try:
         r = requests.get(f"{CORE_URL}/api/streams", timeout=3)
-        return jsonify(r.json())
+        payload = r.json()
+        payload["streams"] = _filter_by_connected_provider(payload.get("streams", []), "name")
+        payload["total"] = len(payload["streams"])
+        return jsonify(payload)
     except Exception:
         return jsonify({
             "streams": [],
@@ -1265,7 +1291,9 @@ def autoflow_status():
 def live_tokens_proxy():
     try:
         r = requests.get(f"{CORE_URL}/api/live_tokens", timeout=3)
-        return jsonify(r.json())
+        payload = r.json()
+        payload["tokens"] = _filter_by_connected_provider(payload.get("tokens", []), "channel")
+        return jsonify(payload)
     except Exception:
         return jsonify({
             "revision": 0, "tokens": [], "error": "DEFENSE-CORE offline.",
@@ -1518,6 +1546,7 @@ def auth_login():
             )
             payload["captured"] = True
             payload["captured_token_id"] = captured["token_id"]
+        _state["connected_provider"] = payload.get("provider")
 
     return jsonify(payload)
 
@@ -1542,6 +1571,7 @@ def api_disconnect():
     """Desconecta o painel do servidor atual (volta ao estado zerado)."""
     global CORE_URL
     CORE_URL = ""
+    _state["connected_provider"] = None
     return jsonify({"ok": True, "message": "Desconectado. O painel voltou ao estado zerado."})
 
 
