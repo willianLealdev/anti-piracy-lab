@@ -1605,6 +1605,10 @@ def auth_login():
     # na hora do login, usa ELE em vez do servidor cadastrado do provedor.
     # Isso permite apontar para qualquer DEFENSE-CORE clonado (VPS em outro país etc.).
     server_override = (data.get("server") or data.get("host") or data.get("url") or "").strip()
+    # Normaliza o endereço: se faltar o protocolo (ex.: "fontez22.ddns.net"),
+    # adiciona "http://" automaticamente para o usuário não precisar digitar.
+    if server_override and "://" not in server_override:
+        server_override = "http://" + server_override
     base = server_override or core_for_provider(data.get("provider"))
     try:
         if server_override:

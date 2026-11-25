@@ -59,6 +59,8 @@ def login(base, username, password):
     /api/auth/login, para o frontend não precisar mudar.
     """
     base = (base or "").strip().rstrip("/")
+    if base and "://" not in base:
+        base = "http://" + base
     try:
         r = requests.get(
             _url(base, username=username, password=password),
