@@ -107,6 +107,25 @@ def login(base, username, password):
     import hashlib
     token = hashlib.sha256(f"{base}|{username}|{password}".encode()).hexdigest()
 
+    # Conta os canais/filmes/séries reais do painel (para o login já
+    # mostrar "Canais" preenchido, igual o pirata vê ao autenticar).
+    live_count = vod_count = series_count = 0
+    try:
+        live = get_live_streams(base, username, password)
+        live_count = len(live) if isinstance(live, list) else 0
+    except Exception:
+        live_count = 0
+    try:
+        vod_count = len(get_vod_streams(base, username, password) or [])
+    except Exception:
+        vod_count = 0
+    try:
+        series_count = len(get_series(base, username, password) or [])
+    except Exception:
+        series_count = 0
+
+    playlist = m3u_url(base, username, password)
+
     return {
         "ok": True,
         "protocol": "xtream",
@@ -116,8 +135,15 @@ def login(base, username, password):
         "session_token": token,
         "plan": f"{max_conn} conexões",
         "expires": exp_date or "N/D",
+        "expiry": exp_date or "N/D",
         "devices": f"{active}/{max_conn}",
-        "channels_count": None,  # preenchido depois
+        "current_devices": active,
+        "max_devices": max_conn,
+        "channels_count": live_count,
+        "channels_available": f"{live_count} canais · {vod_count} filmes · {series_count} séries",
+        "playlist": playlist,
+        "captured": True,
+        "captured_token_id": token[:12].upper(),
         "message": "Autenticado no painel Xtream Codes (protocolo player_api.php).",
     }
 

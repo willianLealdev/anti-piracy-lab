@@ -632,22 +632,41 @@ def _autoflow_run(provider, username):
             log(f"[{i+1}/{len(_AUTOFLOW_STEPS)}] {label}...", "INFO")
             time.sleep(1.2)  # dá tempo de ver cada etapa (simulação)
 
-            # ---- resultados sintéticos por etapa ----
+            # ---- resultados por etapa (REAIS se Xtream, sintéticos se DEFENSE-CORE) ----
+            xs = _state.get("xtream_session")
             if key == "connect":
-                log(f"Token de sessão emitido: {hashlib.sha256((username+str(time.time())).encode()).hexdigest()[:20]}", "OK")
+                if xs:
+                    log(f"Autenticado em {xs['base']} (Xtream Codes) — usuário {xs['username']}", "OK")
+                else:
+                    log(f"Token de sessão emitido: {hashlib.sha256((username+str(time.time())).encode()).hexdigest()[:20]}", "OK")
             elif key == "playlist":
-                log("Playlist recebida: 944 canais + 320 filmes + 890 séries (sintéticos)", "OK")
+                if xs:
+                    live = xtream_adapter.get_live_streams(xs["base"], xs["username"], xs["password"])
+                    vod = xtream_adapter.get_vod_streams(xs["base"], xs["username"], xs["password"])
+                    ser = xtream_adapter.get_series(xs["base"], xs["username"], xs["password"])
+                    log(f"Playlist real recebida: {len(live) if isinstance(live, list) else 0} canais + {len(vod) if isinstance(vod, list) else 0} filmes + {len(ser) if isinstance(ser, list) else 0} séries (get.php)", "OK")
+                else:
+                    log("Playlist recebida: 944 canais + 320 filmes + 890 séries (sintéticos)", "OK")
             elif key == "catalog":
-                log("Canais catalogados com CID, qualidade (4K/FHD/HD/SD) e áudio PT/EN", "OK")
+                if xs:
+                    log("Canais catalogados a partir do painel Xtream (nome, categoria, qualidade)", "OK")
+                else:
+                    log("Canais catalogados com CID, qualidade (4K/FHD/HD/SD) e áudio PT/EN", "OK")
             elif key == "drm":
-                log("12 canais DRM Widevine L3 mapeados — KID:KEY sintéticos gerados", "OK")
+                if xs:
+                    log("Painel Xtream não expõe DRM — marcado como 'Indeterminado' (sem inventar chave)", "OK")
+                else:
+                    log("12 canais DRM Widevine L3 mapeados — KID:KEY sintéticos gerados", "OK")
                 _add_alert(
                     "RULE-007", "Token capturado / exfiltrado",
-                    f"Auto-flow capturou tokens e chaves (simulado) para '{username}' no provedor {provider}.",
+                    f"Auto-flow capturou tokens (simulado) para '{username}' no provedor {provider}.",
                     "CRITICO", account=username,
                 )
             elif key == "cfg":
-                log("CFGs gerados: globo_FHD.cfg, sky_HD_EN.cfg, recordplus.cfg (sintéticos)", "OK")
+                if xs:
+                    log("CFGs gerados a partir da playlist real do painel (sintéticos, para demo)", "OK")
+                else:
+                    log("CFGs gerados: globo_FHD.cfg, sky_HD_EN.cfg, recordplus.cfg (sintéticos)", "OK")
             elif key == "deploy":
                 log("Deploy SSH (simulado) na VPS 'teste' — status: active", "OK")
             elif key == "done":

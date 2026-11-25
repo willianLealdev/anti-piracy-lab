@@ -1333,6 +1333,9 @@ async function doLogin(){
       </div>`;
     _lastPlaylist = d.playlist || null;
     authLogLine('Login OK: ' + username + ' (' + d.provider + ')', 'ok');
+    try { await loadChannels(); } catch(e){}
+    try { await loadCaptures(); } catch(e){}
+    try { await loadTokens(); } catch(e){}
   }else{
     const isHard = ['senha_incorreta','conta_bloqueada','usuario_nao_encontrado'].includes(d.error);
     document.getElementById('authResult').innerHTML = `
