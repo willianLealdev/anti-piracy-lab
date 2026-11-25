@@ -27,6 +27,8 @@ import uuid
 import requests
 from flask import Flask, jsonify, render_template, request
 
+import xtream_adapter
+
 app = Flask(__name__)
 
 CORE_URL = os.environ.get("CORE_URL", "").strip()
@@ -529,6 +531,7 @@ _state = {
     # simulando o comportamento de um sistema pirata (sem nenhum dado real).
     "token_vault": [],
     "connected_provider": None,  # provedor conectado (filtra streams/tokens)
+    "xtream_session": None,  # credenciais da sessao Xtream Codes (painel IPTV real autorizado)
 }
 
 # Mapeia cada stream simulado ao provedor correspondente, para o painel
@@ -920,13 +923,25 @@ def vault():
 @app.route("/api/channels")
 def channels():
     prov = _state.get("connected_provider")
+    xs = _state.get("xtream_session")
+    if xs:
+        try:
+            live = xtream_adapter.get_live_streams(xs["base"], xs["username"], xs["password"])
+        except Exception:
+            live = []
+        chans = [xtream_adapter.map_channel(c, xs["username"], xs["password"], xs["base"]) for c in live]
+        return jsonify({
+            "total": len(chans),
+            "categories": sorted({c["category"] for c in chans}),
+            "channels": chans,
+            "protocol": "xtream",
+        })
     chans = _gen_channels_for_provider(prov) if prov else []
     return jsonify({
         "total": len(chans),
         "categories": CATEGORIES,
         "channels": chans,
     })
-
 
 @app.route("/api/alerts")
 def alerts():
@@ -1211,6 +1226,10 @@ def youtube_m3u():
 @app.route("/api/channels/m3u")
 def channels_m3u():
     """Gera a playlist M3U dos canais catalogados (filtros opcionais)."""
+    xs = _state.get("xtream_session")
+    if xs:
+        from flask import redirect
+        return redirect(xtream_adapter.m3u_url(xs["base"], xs["username"], xs["password"]))
     q = (request.args.get("q") or "").lower()
     prov = request.args.get("provider") or ""
     qual = request.args.get("quality") or ""
@@ -1594,19 +1613,56 @@ def auth_login():
             r = requests.post(f"{server_override}/api/auth/login", json=data, timeout=6)
         else:
             r = _post_json(base, "/api/auth/login", data)
+        # Detecta se o servidor NÃO é um DEFENSE-CORE (404 ou resposta HTML):
+        # então tenta o protocolo Xtream Codes (/player_api.php).
+        ct = (r.headers.get("content-type") or "").lower()
+        is_core_json = r.status_code == 200 and ("json" in ct or (r.text or "").lstrip().startswith("{"))
+        if not is_core_json:
+            raise RuntimeError("not_defense_core")
         payload = r.json()
         if server_override:
             payload["server"] = server_override
-            # Conexão aberta bem-sucedida => o painel passa a usar ESTE servidor.
             if payload.get("ok"):
                 global CORE_URL
                 CORE_URL = server_override.rstrip("/")
+    except RuntimeError:
+        if username and server_override:
+            xt = xtream_adapter.login(server_override, username, (data.get("password") or ""))
+            if xt.get("ok"):
+                _state["xtream_session"] = {
+                    "base": server_override.rstrip("/"),
+                    "username": username,
+                    "password": data.get("password") or "",
+                }
+                _state["connected_provider"] = "Painel Xtream Codes"
+                payload = xt
+            else:
+                return jsonify(xt), 401
+        else:
+            return jsonify({
+                "ok": False,
+                "error": "core_offline",
+                "message": f"O servidor ({base}) não respondeu como DEFENSE-CORE nem como painel Xtream.",
+            }), 503
     except Exception:
-        return jsonify({
-            "ok": False,
-            "error": "core_offline",
-            "message": f"Não foi possível conectar ao servidor informado ({base}). Verifique o endereço e se o DEFENSE-CORE está no ar.",
-        }), 503
+        if username and server_override:
+            xt = xtream_adapter.login(server_override, username, (data.get("password") or ""))
+            if xt.get("ok"):
+                _state["xtream_session"] = {
+                    "base": server_override.rstrip("/"),
+                    "username": username,
+                    "password": data.get("password") or "",
+                }
+                _state["connected_provider"] = "Painel Xtream Codes"
+                payload = xt
+            else:
+                return jsonify(xt), 401
+        else:
+            return jsonify({
+                "ok": False,
+                "error": "core_offline",
+                "message": f"Não foi possível conectar ao servidor informado ({base}). Verifique o endereço e se o DEFENSE-CORE está no ar.",
+            }), 503
 
     # Integração com o motor de detecção: gera alerta conforme o cenário
     if payload.get("error") == "senha_incorreta":

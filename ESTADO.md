@@ -44,6 +44,14 @@
 - Painel local: http://127.0.0.1:5050 (zerado)
 - Servidor-mãe: http://173.249.14.170:8080
 
+## Adaptador Xtream Codes (Plano B) — 2026-11-25
+- `xtream_adapter.py`: cliente do protocolo /player_api.php (XUI.one, Xtream UI).
+- O painel auto-detecta: tenta DEFENSE-CORE primeiro; se 404/HTML, tenta Xtream.
+- Conecta SOMENTE em painéis IPTV autorizados (pentest com permissão).
+- NÃO conecta em Sky/GloboPlay/Pluto (esses são apps próprios com DRM, não têm player_api.php).
+- Fluxo: login -> /api/auth/login detecta Xtream -> /api/channels lista canais reais -> /api/channels/m3u redireciona pro get.php.
+- Heurística de DRM: marcado "Indeterminado" (painel Xtream não expõe DRM); NÃO inventa KID:KEY.
+
 ## Limpeza de capturas (2026-11-25)
 - Endpoint CLEAR no core: POST /api/captures/clear (zera data/captures.json na VPS).
 - Proxy no painel: POST /api/captures/clear + botao 'Limpar capturas do servidor' no Vault de Capturas.
