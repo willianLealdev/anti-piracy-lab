@@ -18,6 +18,21 @@ services:
       timeout: 5s
       retries: 5
 
+  painel:
+    build: .
+    command: python app.py
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "5050"
+    ports:
+      - "5050:5050"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:5050/api/ping', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   core_data:
   core_streams:
