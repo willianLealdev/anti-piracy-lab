@@ -59,7 +59,9 @@ def _load_state():
             with open(STATE_FILE, "r", encoding="utf-8") as f:
                 st = json.load(f)
             # garante campos de servidor/subdomínio nos provedores
-            for p in st.get("providers", []):
+            st.setdefault("providers", [])
+            st.setdefault("accounts", [])
+            for p in st["providers"]:
                 p.setdefault("subdomain", _slugify(p.get("name", p.get("id", "servidor"))))
                 p.setdefault("server", _server_for(p.get("name", p.get("id", "servidor"))))
             return st
@@ -672,6 +674,18 @@ def auth_login():
             "ok": False,
             "error": "usuario_nao_encontrado",
             "message": f"Usuário '{username}' não encontrado no provedor.",
+        })
+
+    # CONTA EXCLUSIVA DO PROVEDOR: a credencial so vale no provedor dela.
+    provider_requested = (data.get("provider") or "").strip()
+    if provider_requested and acc.get("provider") != provider_requested:
+        return jsonify({
+            "ok": False,
+            "error": "conta_de_outro_provedor",
+            "message": (
+                "A conta '" + username + "' pertence ao provedor '" + str(acc.get("provider")) + "', "
+                "nao a '" + provider_requested + "'. Use a conta correta do provedor selecionado."
+            ),
         })
 
     if password != acc["password"]:

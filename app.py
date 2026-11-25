@@ -676,8 +676,14 @@ def dashboard():
         "channels": len(CHANNELS),
     }
 
+    drm_core = dict(DRM_CORE)
+    if core.get("status") != "Ativo":
+        drm_core["status"] = "Offline"
+        drm_core["ram_disk_status"] = "--"
+        drm_core["security_level"] = "Sem conexao"
+
     return jsonify({
-        "drm_core": DRM_CORE,
+        "drm_core": drm_core,
         "core": core,
         "core_url": CORE_URL,
         "providers": providers,

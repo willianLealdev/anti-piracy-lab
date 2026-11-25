@@ -181,7 +181,7 @@
         <div class="sub" id="pageSub">Visão em tempo real de provedores Sky+, GloboPlay e servidores conectados</div>
       </div>
       <div class="gbtns">
-        <button class="btn green" onclick="baixarUrl('get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts')">Lista M3U</button>
+        <button class="btn green" onclick="baixarPlaylist()">Lista M3U</button>
         <button class="btn" onclick="gerarCfgTodos()">Gerar CFGs</button>
         <button class="btn gold" onclick="fullUpdate()">⚡ Full Update</button>
       </div>
@@ -836,10 +836,12 @@ function abrirPlayer(url, id){
   }
 }
 function baixarPlaylist(){
-  baixarUrl('get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts');
+  if(!_lastPlaylist){ toast('Conecte primeiro em Conexão & Login.'); return; }
+  baixarUrl(_lastPlaylist);
 }
 function copiarLinkPlaylist(){
-  copiarTexto(CORE + '/get.php?username=demo.valido&password=Sky2026@Ok&type=m3u_plus&output=ts');
+  if(!_lastPlaylist){ toast('Conecte primeiro em Conexão & Login.'); return; }
+  copiarTexto(_lastPlaylist);
 }
 
 // ===== VPS =====
@@ -1049,8 +1051,8 @@ function authProviderChanged(){
   const name = document.getElementById('authProvider').value;
   const p = _providers.find(x=>x.name===name);
   const el = document.getElementById('authServer');
-  if(p){ el.placeholder = p.server || 'http://127.0.0.1:8484'; }
-  else { el.placeholder = 'http://127.0.0.1:8484'; }
+  if(p && p.server){ el.placeholder = p.server; }
+  else { el.placeholder = 'Digite o endereço do servidor (IP:porta ou domínio)'; }
 }
 function providerForm(p){
   p = p || {};
@@ -1194,6 +1196,7 @@ async function doLogin(){
           <span style="font-size:13px">O módulo <b>DEFENSE</b> — agindo como o pirata — capturou o token <span class="mono">${esc(d.captured_token_id)}</span> e o armazenou no <b>Vault de Tokens</b>. Alerta <b>RULE-007</b> disparado.</span>
         </div>`:''}
       </div>`;
+    _lastPlaylist = d.playlist || null;
     authLogLine('Login OK: ' + username + ' (' + d.provider + ')', 'ok');
   }else{
     const isHard = ['senha_incorreta','conta_bloqueada','usuario_nao_encontrado'].includes(d.error);
@@ -1206,6 +1209,9 @@ async function doLogin(){
   }
   loadDashboard(); loadAlerts(); loadTokens();
 }
+
+// ===== SESSAO ATUAL (playlist do ultimo login) =====
+let _lastPlaylist = null;
 
 // ===== AUTO-FLOW =====
 let _afPoll = null;
