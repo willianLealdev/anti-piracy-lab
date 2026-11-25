@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://youtube.defense-lab.net"
-      PROVIDER_FILTER: "youtube"
+      PUBLIC_URL: "http://recordplus.defense-lab.net"
+      PROVIDER_FILTER: "recordplus"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
