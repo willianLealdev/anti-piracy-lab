@@ -5,8 +5,8 @@ services:
     environment:
       HOST: "0.0.0.0"
       PORT: "8080"
-      PUBLIC_URL: "http://paramountplus.defense-lab.net"
-      PROVIDER_FILTER: "paramountplus"
+      PUBLIC_URL: "http://clarotv.defense-lab.net"
+      PROVIDER_FILTER: "clarotv"
     volumes:
       - core_data:/app/data
       - core_streams:/app/streams
