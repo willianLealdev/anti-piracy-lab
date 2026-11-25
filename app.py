@@ -429,6 +429,70 @@ def _gen_channels():
     return chans
 
 
+# Mapeia o nome do provedor (como vem do core) para a chave do catálogo sintético.
+_PROVIDER_NAME_TO_CATALOG = {
+    "GloboPlay Completo": "GloboPlay",
+    "Astra TV (Cesbo)": "Astra",
+    "Sky+ (DirectvGO)": "SkyPlus",
+    "Prime Video (Amazon)": "PrimeVideo",
+    "Pluto TV Brasil": "PlutoTV",
+    "Soul TV Brasil": "SoulTV",
+    "YouTube Live": "YouTube",
+    "Record+ / PlayPlus": "RecordPlus",
+    "BandPlay Oficial": "BandPlay",
+    "HBO Max": "HBOMax",
+    "Disney+": "DisneyPlus",
+    "Paramount+": "ParamountPlus",
+    "Claro TV+": "ClaroTV",
+}
+
+
+def _gen_channels_for_provider(prov_name):
+    """Gera o catálogo de canais (sintético) SOMENTE do provedor conectado."""
+    if not prov_name:
+        return []
+    cat_key = _PROVIDER_NAME_TO_CATALOG.get(prov_name)
+    if not cat_key:
+        return []
+    cfg = _PROVIDER_CATALOG.get(cat_key)
+    if not cfg:
+        return []
+    chans = []
+    cid = 1000
+    drm = cfg["drm"]
+    seeds = cfg["seeds"]
+    target = cfg["count"]
+    produced = 0
+    i = 0
+    while produced < target:
+        if i < len(seeds):
+            base_name, cat = seeds[i]
+        else:
+            base_name, cat = seeds[(i - len(seeds)) % len(seeds)]
+            base_name = f"{base_name} {((i - len(seeds)) // len(seeds)) + 2}"
+        for v in _variants_for(cat_key.lower(), base_name):
+            quality = v.split("_")[0]
+            audio = v.split("_")[1] if "_" in v else "PT"
+            chans.append({
+                "id": cid,
+                "logo": f"/static/logo.svg?c={cid}",
+                "name": base_name,
+                "cid": f"CID-{_hash(base_name + v)[:8].upper()}",
+                "category": cat,
+                "quality": quality,
+                "audio": audio,
+                "provider": prov_name,
+                "drm": drm,
+                "kid": f"{_hash(base_name + v + 'kid')[:8].upper()}:{_hash(base_name + v + 'key')[:12].upper()}",
+            })
+            cid += 1
+            produced += 1
+            if produced >= target:
+                break
+        i += 1
+    return chans
+
+
 CHANNELS = []  # limpo; populado dinamicamente ao conectar a um provedor
 
 # (YOUTUBE_CHANNELS agora é carregado do arquivo de persistência panel_state.json)
@@ -487,6 +551,20 @@ def _filter_by_connected_provider(items, key):
     if not prov:
         return []
     return [it for it in items if _STREAM_PROVIDER_BY_NAME.get(it.get(key), "?") == prov]
+
+
+def _capture_matches_provider(cap, prov):
+    """True se a captura pertence ao provedor conectado."""
+    channel = (cap.get("channel") or "").replace(" (SIMULADO)", "").strip()
+    cap_prov = (cap.get("provider") or "").strip()
+    mapped = _STREAM_PROVIDER_BY_NAME.get(channel) or _STREAM_PROVIDER_BY_NAME.get(channel + " (SIMULADO)")
+    if mapped == prov:
+        return True
+    if cap_prov:
+        first = prov.split(" (")[0].strip()
+        if cap_prov == first or cap_prov.startswith(first) or first.startswith(cap_prov):
+            return True
+    return False
 
 
 _alert_templates = [
@@ -832,10 +910,12 @@ def vault():
 
 @app.route("/api/channels")
 def channels():
+    prov = _state.get("connected_provider")
+    chans = _gen_channels_for_provider(prov) if prov else []
     return jsonify({
-        "total": len(CHANNELS),
+        "total": len(chans),
         "categories": CATEGORIES,
-        "channels": CHANNELS,
+        "channels": chans,
     })
 
 
@@ -1126,7 +1206,7 @@ def channels_m3u():
     prov = request.args.get("provider") or ""
     qual = request.args.get("quality") or ""
     cat = request.args.get("category") or ""
-    chans = CHANNELS
+    chans = _gen_channels_for_provider(_state.get("connected_provider"))
     if q:
         chans = [c for c in chans if q in c["name"].lower() or q in c["cid"].lower()]
     if prov:
@@ -1427,7 +1507,14 @@ def captures_list():
     """Lista as capturas (KID:KEY DRM simuladas + links M3U FAST) do banco."""
     try:
         r = requests.get(f"{CORE_URL}/api/captures", timeout=3)
-        return jsonify(r.json())
+        payload = r.json()
+        prov = _state.get("connected_provider")
+        caps = payload.get("captures", [])
+        if prov:
+            caps = [c for c in caps if _capture_matches_provider(c, prov)]
+        payload["captures"] = caps
+        payload["total"] = len(caps)
+        return jsonify(payload)
     except Exception:
         return jsonify({"captures": [], "error": "DEFENSE-CORE offline."}), 503
 
