@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import threading
 import time
 import uuid
@@ -561,6 +562,7 @@ _state = {
     "token_vault": [],
     "connected_provider": None,  # provedor conectado (filtra streams/tokens)
     "xtream_session": None,  # credenciais da sessao Xtream Codes (painel IPTV real autorizado)
+    "last_login": None,     # resumo do ultimo login bem-sucedido (para restaurar ao recarregar)
 }
 
 # Mapeia cada stream simulado ao provedor correspondente, para o painel
@@ -598,6 +600,16 @@ def _capture_matches_provider(cap, prov):
             return True
     return False
 
+
+# Restaura a sessao persistida no banco (sobrevive ao restart do servidor).
+_saved_session = panel_db.load_session()
+if _saved_session and _saved_session.get("provider"):
+    _state["connected_provider"] = _saved_session.get("provider")
+    _state["last_login"] = _saved_session
+    proto = (_saved_session.get("protocol") or "").lower()
+    base = (_saved_session.get("server") or "").rstrip("/")
+    if "xtream" in proto and _saved_session.get("username"):
+        _state["xtream_session"] = {"base": base, "username": _saved_session.get("username"), "password": ""}
 
 _alert_templates = [
     ("RULE-001", "Compartilhamento de token", "Token compartilhado entre 4 IPs em 3 min", "CRITICO"),
@@ -1806,6 +1818,31 @@ def capture_channel(channel_id):
     return jsonify(payload)
 
 
+def _persist_session(payload, username, server):
+    """Grava o resumo do login no banco do painel (nao guarda senha)."""
+    try:
+        if not payload or not payload.get("ok"):
+            return
+        summary = {
+            "provider": payload.get("provider") or "",
+            "protocol": payload.get("protocol") or "",
+            "username": username or payload.get("username") or "",
+            "server": server or payload.get("server") or "",
+            "playlist": payload.get("playlist") or "",
+            "session_token": payload.get("session_token") or "",
+            "plan": payload.get("plan") or "",
+            "expiry": payload.get("expiry") or "",
+            "current_devices": payload.get("current_devices") or 0,
+            "max_devices": payload.get("max_devices") or 0,
+            "channels_available": payload.get("channels_available") or payload.get("channels_count") or 0,
+            "connected_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _state["last_login"] = summary
+        panel_db.save_session(summary)
+    except Exception:
+        pass
+
+
 @app.route("/api/auth/login", methods=["POST"])
 def auth_login():
     """Encaminha o login para o DEFENSE-CORE e integra alertas defensivos."""
@@ -1828,6 +1865,7 @@ def auth_login():
             _state["pluto_session"] = {"base": (base or "").rstrip("/")}
             _state["connected_provider"] = "Pluto TV (API oficial)"
             p["protocol"] = "Pluto TV (API oficial)"
+            _persist_session(p, username, base)
             return jsonify(p)
         return jsonify(p), 503
 
@@ -1838,6 +1876,7 @@ def auth_login():
             _state["soultv_session"] = {"base": (base or "").rstrip("/")}
             _state["connected_provider"] = "Soul TV Brasil (FAST)"
             p["protocol"] = "Soul TV Brasil (FAST)"
+            _persist_session(p, username, base)
             return jsonify(p)
         return jsonify(p), 503
 
@@ -1958,6 +1997,7 @@ def auth_login():
             payload["captured_token_id"] = captured["token_id"]
         _state["connected_provider"] = payload.get("provider")
 
+    _persist_session(payload, username, base)
     return jsonify(payload)
 
 
@@ -1976,12 +2016,28 @@ def add_cors(resp):
     return resp
 
 
+@app.route("/api/session", methods=["GET"])
+def api_session():
+    """Retorna a sessao ativa (para o frontend restaurar o login ao recarregar)."""
+    s = _state.get("last_login") or panel_db.load_session()
+    if not s or not s.get("provider"):
+        return jsonify({"connected": False})
+    out = dict(s)
+    out["connected"] = True
+    return jsonify(out)
+
+
 @app.route("/api/disconnect", methods=["POST"])
 def api_disconnect():
     """Desconecta o painel do servidor atual (volta ao estado zerado)."""
     global CORE_URL
     CORE_URL = ""
     _state["connected_provider"] = None
+    _state["last_login"] = None
+    _state["xtream_session"] = None
+    _state["pluto_session"] = None
+    _state["soultv_session"] = None
+    panel_db.clear_session()
     return jsonify({"ok": True, "message": "Desconectado. O painel voltou ao estado zerado."})
 
 
@@ -2044,16 +2100,28 @@ def hls_proxy():
 
     if _is_playlist(target):
         # Rewrite: transforma linhas de URI em chamadas ao nosso proxy.
+        # Tambem reescreve URIs embutidas em EXT-X-KEY (AES-128) e EXT-X-MEDIA
+        # (legendas), que ficam DENTRO de linhas de comentario e antes nao eram
+        # reescritas -> o navegador tentava buscar a chave direto no provedor e
+        # falhava por CORS, derrubando o player em canais criptografados.
+        from urllib.parse import urljoin
         text = body.decode("utf-8", "replace")
         out = []
         base_abs = target
         for line in text.splitlines():
             s = line.strip()
+            if s.startswith("#EXT-X-KEY") or s.startswith("#EXT-X-MEDIA"):
+                s = re.sub(
+                    r'(URI=")([^"]+)(")',
+                    lambda m: m.group(1) + _proxy_url(urljoin(base_abs, m.group(2))) + m.group(3),
+                    s,
+                )
+                out.append(s)
+                continue
             if not s or s.startswith("#"):
                 out.append(line)
                 continue
             # URI relativa ou absoluta
-            from urllib.parse import urljoin
             absu = urljoin(base_abs, s)
             out.append(_proxy_url(absu))
         resp = "\n".join(out)

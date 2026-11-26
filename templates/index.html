@@ -893,7 +893,10 @@ function _playHls(video, url){
     if(window.Hls && window.Hls.isSupported() && /\.m3u8($|\?)/.test(url)){
       if(video._hls){ video._hls.destroy(); video._hls = null; }
       const hls = new Hls({ enableWorker: true });
-      hls.loadSource(url);
+      // Rotas externas passam pelo proxy HLS do painel (evita bloqueio de CORS,
+      // ex.: Pluto TV). Mesma origem não precisa.
+      const sameOrigin = url.startsWith(location.origin) || url.startsWith('/');
+      hls.loadSource(sameOrigin ? url : '/api/hls/proxy?url=' + encodeURIComponent(url));
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
       hls.on(Hls.Events.ERROR, (e, data) => {
@@ -1461,9 +1464,42 @@ async function loadSync(){
   ).join('') || '<div class="muted">Nenhuma rotação detectada ainda.</div>';
 }
 
+// ===== RESTAURAR SESSAO (login persiste no banco ao recarregar) =====
+async function restoreSession(){
+  try{
+    const d = await get('/api/session');
+    if(!d || !d.connected){ return; }
+    _lastPlaylist = d.playlist || null;
+    const ps = document.getElementById('authProvider');
+    if(ps){
+      if(![...ps.options].some(o=>o.value===d.provider || o.textContent===d.provider)){
+        const o = document.createElement('option'); o.value=d.provider; o.textContent=d.provider; ps.appendChild(o);
+      }
+      ps.value = d.provider;
+    }
+    if(d.username) document.getElementById('authUser').value = d.username;
+    if(d.server) document.getElementById('authServer').value = d.server;
+    document.getElementById('authResult').innerHTML = `
+      <div style="border-left:3px solid var(--green);background:var(--panel2);padding:12px;border-radius:6px">
+        <div class="a1" style="color:var(--green)">Sessao restaurada (salva no banco)</div>
+        <div class="kv" style="margin-top:8px"><b>Provedor</b><span style="color:var(--gold2);font-weight:600">${esc(d.provider)}</span></div>
+        <div class="kv"><b>Protocolo</b><span style="color:var(--blue);font-weight:600">${esc(d.protocol||'-')}</span></div>
+        <div class="kv"><b>Servidor</b><span class="mono" style="word-break:break-all">${esc(d.server||'-')}</span></div>
+        <div class="kv"><b>Usuario</b><span>${esc(d.username||'-')}</span></div>
+        ${d.plan?`<div class="kv"><b>Plano</b><span>${esc(d.plan)}</span></div>`:''}
+        ${d.playlist?`<div class="kv"><b>Playlist</b><span class="mono" style="word-break:break-all">${esc(d.playlist)}</span></div>`:''}
+      </div>`;
+    try{ await loadChannels(); }catch(e){}
+    try{ await loadCaptures(); }catch(e){}
+    try{ await loadTokens(); }catch(e){}
+    loadDashboard();
+  }catch(e){}
+}
+
 // INIT
 loadDashboard(); loadAuthProviders(); loadAuthAccounts(); loadTokens(); loadAlerts(); loadChannels();
 loadVps(); loadYoutube(); loadCfg(); loadDeploy(); loadTrava();
+restoreSession();
 setInterval(()=>{ loadDashboard(); loadAlerts(); }, 5000);
 setInterval(()=>{ loadLiveTokens(); loadSync(); }, 6000);
 </script>

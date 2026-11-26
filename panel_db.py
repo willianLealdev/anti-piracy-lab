@@ -7,6 +7,7 @@ DEFENSE-CORE da VPS. O core e apenas o ambiente de simulacao de demonstracao.
 """
 import datetime
 import os
+import json
 import sqlite3
 import uuid
 
@@ -216,4 +217,40 @@ def update_provider(pid, data):
 def delete_provider(pid):
     with _conn() as c:
         c.execute("DELETE FROM providers WHERE id=?", (pid,))
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# SESSAO (login persistente no banco do painel)
+# ---------------------------------------------------------------------------
+# A sessao ativa fica salva no SQLite para NAO se perder ao atualizar a pagina
+# ou reiniciar o servidor. Sempre que o operador faz login, gravamos aqui;
+# ao deslogar, apagamos. O painel volta a exibir a conta conectada ao recarregar.
+def save_session(data):
+    with _conn() as c:
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS session (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT)"
+        )
+        c.execute(
+            "INSERT OR REPLACE INTO session (id, data) VALUES (1, ?)",
+            (json.dumps(data, ensure_ascii=False),),
+        )
+    return {"ok": True}
+
+
+def load_session():
+    with _conn() as c:
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS session (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT)"
+        )
+        row = c.execute("SELECT data FROM session WHERE id=1").fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+def clear_session():
+    with _conn() as c:
+        c.execute(
+            "CREATE TABLE IF NOT EXISTS session (id INTEGER PRIMARY KEY CHECK (id=1), data TEXT)"
+        )
+        c.execute("DELETE FROM session WHERE id=1")
     return {"ok": True}
