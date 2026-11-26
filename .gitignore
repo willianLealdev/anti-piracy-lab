@@ -5,3 +5,6 @@ __pycache__/
 streams/
 output/cfgs/*
 !output/cfgs/.gitkeep
+
+data/*.db
+data/*.json
