@@ -1818,8 +1818,8 @@ def capture_channel(channel_id):
     return jsonify(payload)
 
 
-def _persist_session(payload, username, server):
-    """Grava o resumo do login no banco do painel (nao guarda senha)."""
+def _persist_session(payload, username, server, password=""):
+    """Grava o resumo do login no banco do painel (inclui senha para restaurar a sessao da demo)."""
     try:
         if not payload or not payload.get("ok"):
             return
@@ -1828,6 +1828,7 @@ def _persist_session(payload, username, server):
             "protocol": payload.get("protocol") or "",
             "username": username or payload.get("username") or "",
             "server": server or payload.get("server") or "",
+            "password": password or payload.get("password") or "",
             "playlist": payload.get("playlist") or "",
             "session_token": payload.get("session_token") or "",
             "plan": payload.get("plan") or "",
@@ -1865,7 +1866,7 @@ def auth_login():
             _state["pluto_session"] = {"base": (base or "").rstrip("/")}
             _state["connected_provider"] = "Pluto TV (API oficial)"
             p["protocol"] = "Pluto TV (API oficial)"
-            _persist_session(p, username, base)
+            _persist_session(p, username, base, (data.get("password") or ""))
             return jsonify(p)
         return jsonify(p), 503
 
@@ -1876,7 +1877,7 @@ def auth_login():
             _state["soultv_session"] = {"base": (base or "").rstrip("/")}
             _state["connected_provider"] = "Soul TV Brasil (FAST)"
             p["protocol"] = "Soul TV Brasil (FAST)"
-            _persist_session(p, username, base)
+            _persist_session(p, username, base, (data.get("password") or ""))
             return jsonify(p)
         return jsonify(p), 503
 
@@ -1997,7 +1998,7 @@ def auth_login():
             payload["captured_token_id"] = captured["token_id"]
         _state["connected_provider"] = payload.get("provider")
 
-    _persist_session(payload, username, base)
+    _persist_session(payload, username, base, (data.get("password") or ""))
     return jsonify(payload)
 
 
@@ -2022,6 +2023,20 @@ def api_session():
     s = _state.get("last_login") or panel_db.load_session()
     if not s or not s.get("provider"):
         return jsonify({"connected": False})
+    # Reconstroi a sessao REAL (nao so o resumo) para que /api/channels
+    # volte a listar os canais apos recarregar a pagina.
+    proto = (s.get("protocol") or "").lower()
+    server = (s.get("server") or "").rstrip("/")
+    username = s.get("username") or ""
+    password = s.get("password") or ""
+    _state["connected_provider"] = s.get("provider")
+    _state["last_login"] = s
+    if proto.startswith("pluto"):
+        _state["pluto_session"] = {"base": server}
+    elif proto.startswith("soul"):
+        _state["soultv_session"] = {"base": server}
+    elif "xtream" in proto or "defense" in proto:
+        _state["xtream_session"] = {"base": server, "username": username, "password": password}
     out = dict(s)
     out["connected"] = True
     return jsonify(out)
