@@ -44,3 +44,10 @@ Plataforma DEFENSIVA de demonstracao. Tudo sintetico/simulado no core. NAO extra
 ## Limites eticos
 - NAO construir extracao Widevine L3 real, captura de tokens reais, gerador CFG funcional, retransmissao de conteudo protegido.
 - Testes so em servidores autorizados.
+
+## Ultimas correcoes (27/11)
+- Login PERSISTE no banco (panel.db > tabela session): sobrevive a refresh e restart. Endpoint GET /api/session + frontend restoreSession().
+- Player HLS corrigido: proxy agora reescreve URI de EXT-X-KEY (AES-128) e EXT-X-MEDIA (legendas) -> canais criptografados da Pluto reproduzem. (era o bug do 're' nao importado = 500).
+- Qualidade mostra HD/FHD (nao mais 'HLS'); deteccao real de resolucao no master.m3u8.
+- Categorias Pluto corretas (nao numeradas).
+- Git: commits 647ba43 e 230d5d2 no main.
