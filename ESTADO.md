@@ -31,6 +31,12 @@ Plataforma DEFENSIVA de demonstracao. Tudo sintetico/simulado no core. NAO extra
 ## Cliente (painel real p/ teste)
 - fontez22.ddns.net | nicollyavelar8a2 / 39227922 (Xtream, max_connections 1)
 
+## Player / Streams (CORRIGIDO)
+- Player da tela usa hls.js (CDN jsdelivr) para reproduzir HLS .m3u8 no Chrome/Edge.
+- Link Pluto corrigido: pluto_adapter.py `_fix_stream_url` preenche parametros (deviceId, BR, lat/lon, clientTime) — sem isso a Pluto devolve 400.
+- Pluto TV retorna 467 canais reais (FAST, sem DRM).
+- Endpoints /api/auth/accounts e /api/live_tokens retornam 200 vazio quando core offline (sem 503).
+
 ## Comandos locais
 - Subir painel: `cd anti-piracy-lab; python app.py` (porta 5050)
 - Subir core local: `python core_server.py` (porta 8080)
