@@ -789,7 +789,7 @@ function renderChannels(){
     const isDrm = c.drm==='Widevine L3';
     const url = c.stream_url || c.m3u_link || '';
     const acao = `<div style="display:flex;gap:4px;flex-wrap:wrap">
-      <button class="btn tiny gold" onclick="capturarCanal(${c.id})">${isDrm?'🔑 Capturar':'▶ Capturar'}</button>
+      <button class="btn tiny gold" onclick="capturarCanal('${c.id}')">${isDrm?'🔑 Capturar':'▶ Capturar'}</button>
       ${url?`<button class="btn tiny" onclick='abrirPlayerUrl(${JSON.stringify(url)},${JSON.stringify(c.name)})'>▶ Player</button>`:''}
       ${url?`<button class="btn tiny" onclick='copiarTexto(${JSON.stringify(url)})'>🔗 Copiar link</button>`:''}
       ${url?`<button class="btn tiny" onclick='baixarM3uUnico(${JSON.stringify(url)})'>⬇ .m3u</button>`:''}
@@ -803,7 +803,7 @@ function renderChannels(){
   }).join('') || '<tr><td colspan="10" class="muted">Nenhum canal encontrado.</td></tr>';
 }
 async function capturarCanal(id){
-  const c = _channels.find(x=>x.id===id);
+  const c = _channels.find(x=>String(x.id)===String(id));
   if(!c){ toast('Canal não encontrado'); return; }
   const isDrm = c.drm==='Widevine L3';
   try{
