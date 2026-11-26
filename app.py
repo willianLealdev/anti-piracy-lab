@@ -1546,7 +1546,7 @@ def live_tokens_proxy():
     except Exception:
         return jsonify({
             "revision": 0, "tokens": [], "error": "DEFENSE-CORE offline.",
-        }), 503
+        })
 
 
 @app.route("/api/rotate", methods=["POST"])
@@ -1607,8 +1607,9 @@ def auth_accounts():
     except Exception:
         return jsonify({
             "accounts": [],
-            "error": "DEFENSE-CORE offline. Inicie o servidor interno.",
-        }), 503
+            "total": 0,
+            "error": "DEFENSE-CORE offline. Conecte a um servidor para listar contas.",
+        })
 
 
 @app.route("/api/auth/accounts", methods=["POST"])
