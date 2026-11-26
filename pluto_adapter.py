@@ -15,7 +15,9 @@ como um catálogo FAST real (sem DRM) entrega o stream direto num link
 HLS aberto — exatamente o vetor que precisa ser monitorado.
 """
 import datetime
+import uuid
 import requests
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 UA = {
     "User-Agent": "DefenseLab/1.0 (authorized research client)",
@@ -54,13 +56,55 @@ def _fetch_channels():
 
 
 def _stream_url(ch):
-    """Extrai o link HLS público (stitched) de um canal."""
+    """Extrai o link HLS público (stitched) de um canal.
+
+    A API devolve o link com parâmetros 'unknown'/vazios que o servidor
+    da Pluto REJEITA (HTTP 400). Aqui reescrevemos a query string com
+    valores válidos (deviceId real, região BR, coordenadas e timestamp),
+    gerando um link que reproduz de verdade no VLC/navegador.
+    """
     st = ch.get("stitched") or {}
     urls = st.get("urls") or []
+    raw = ""
     for u in urls:
         if (u.get("type") or "").lower() == "hls":
-            return u.get("url") or ""
-    return (urls[0].get("url") or "") if urls else ""
+            raw = u.get("url") or ""
+            break
+    if not raw and urls:
+        raw = urls[0].get("url") or ""
+    return _fix_stream_url(raw)
+
+
+def _fix_stream_url(raw):
+    """Preenche os parâmetros obrigatórios da query da Pluto TV."""
+    if not raw:
+        return raw
+    p = urlparse(raw)
+    qs = dict(parse_qsl(p.query, keep_blank_values=True))
+    now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    dev = str(uuid.uuid4())
+    # Parâmetros que o stitcher exige preenchidos (senão responde 400)
+    qs.update({
+        "advertisingId": "",
+        "appName": "web",
+        "appVersion": "na",
+        "architecture": "",
+        "buildVersion": "",
+        "clientTime": now,
+        "deviceDNT": "0",
+        "deviceId": dev,
+        "deviceLat": "-23.5505",   # São Paulo (BR)
+        "deviceLon": "-46.6333",
+        "deviceMake": "Chrome",
+        "deviceModel": "web",
+        "deviceType": "web",
+        "deviceVersion": "130.0",
+        "includeExtendedEvents": "false",
+        "marketingRegion": "BR",
+        "sid": dev[:16],
+        "userId": dev,
+    })
+    return urlunparse((p.scheme, p.netloc, p.path, p.params, urlencode(qs), p.fragment))
 
 
 def _logo(ch):

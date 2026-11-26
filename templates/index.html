@@ -137,6 +137,7 @@
   .fld label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
   .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -886,11 +887,31 @@ function exportarCapturasM3u(){
   toast(`Exportadas ${sel.length} capturas em .m3u`);
 }
 
+function _playHls(video, url){
+  // Reproduz HLS (.m3u8) no navegador usando hls.js (Chrome/Edge não suportam nativamente)
+  try{
+    if(window.Hls && window.Hls.isSupported() && /\.m3u8($|\?)/.test(url)){
+      if(video._hls){ video._hls.destroy(); video._hls = null; }
+      const hls = new Hls({ enableWorker: true });
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+      hls.on(Hls.Events.ERROR, (e, data) => {
+        if(data && data.fatal){ toast('Erro ao reproduzir stream HLS.'); }
+      });
+      video._hls = hls;
+      return;
+    }
+  }catch(e){}
+  video.src = url;
+  video.play().catch(()=>{});
+}
+
 function abrirPlayerUrl(url, nome){
   const modal = document.getElementById('playerModal');
   const video = document.getElementById('playerVideo');
   if(!modal || !video) return;
-  video.src = url;
+  _playHls(video, url);
   document.getElementById('playerTitle').textContent = nome || 'Stream simulado';
   modal.style.display = 'flex';
 }
@@ -968,8 +989,10 @@ function abrirPlayer(url, id){
   if(!box){ toast('Player indisponível'); return; }
   box.style.display = box.style.display==='none'?'block':'none';
   if(box.innerHTML === ''){
-    box.innerHTML = `<video controls autoplay muted style="width:100%;border-radius:6px;background:#000" src="${esc(url)}"></video>
+    const vid = 'vid-' + id + '-' + Date.now();
+    box.innerHTML = `<video id="${vid}" controls autoplay muted playsinline style="width:100%;border-radius:6px;background:#000"></video>
       <div class="muted" style="margin-top:6px">Se o player não suportar HLS, use "▶ Abrir no VLC" ou "⬇ .m3u".</div>`;
+    _playHls(document.getElementById(vid), url);
   }
 }
 function baixarPlaylist(){
