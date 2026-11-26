@@ -28,6 +28,7 @@ import requests
 from flask import Flask, jsonify, render_template, request
 
 import xtream_adapter
+import pluto_adapter
 
 app = Flask(__name__)
 
@@ -942,6 +943,18 @@ def vault():
 @app.route("/api/channels")
 def channels():
     prov = _state.get("connected_provider")
+    ps = _state.get("pluto_session")
+    if ps:
+        try:
+            chans = pluto_adapter.channels()
+        except Exception:
+            chans = []
+        return jsonify({
+            "total": len(chans),
+            "categories": sorted({c["category"] for c in chans}),
+            "channels": chans,
+            "protocol": "pluto",
+        })
     xs = _state.get("xtream_session")
     if xs:
         try:
@@ -1255,6 +1268,29 @@ def youtube_m3u():
 @app.route("/api/channels/m3u")
 def channels_m3u():
     """Gera a playlist M3U dos canais catalogados (filtros opcionais)."""
+    ps = _state.get("pluto_session")
+    if ps:
+        cid = (request.args.get("id") or "").strip()
+        if cid:
+            c = pluto_adapter.channel_by_id(cid)
+            name = (c or {}).get("name") or f"Canal {cid}"
+            url = (c or {}).get("stream_url") or ""
+            from flask import Response
+            m3u = f"#EXTM3U\n#EXTINF:-1,{name}\n{url}\n"
+            return Response(
+                m3u, mimetype="audio/x-mpegurl",
+                headers={"Content-Disposition": f'attachment; filename="{name.replace(chr(32), "_")[:60]}.m3u"'},
+            )
+        from flask import Response
+        chans = pluto_adapter.channels()[:200]
+        lines = ["#EXTM3U", f"# Pluto TV (API oficial) - {len(chans)} canais FAST", ""]
+        for c in chans:
+            lines.append(f"#EXTINF:-1,{c['name']}")
+            lines.append(c["stream_url"] or "")
+        return Response(
+            "\n".join(lines), mimetype="audio/x-mpegurl",
+            headers={"Content-Disposition": 'attachment; filename="pluto_tv.m3u"'},
+        )
     xs = _state.get("xtream_session")
     if xs:
         cid = (request.args.get("id") or "").strip()
@@ -1584,8 +1620,9 @@ def providers_delete(pid):
 @app.route("/api/captures")
 def captures_list():
     """Lista as capturas (KID:KEY DRM simuladas + links M3U FAST) do banco."""
+    ps = _state.get("pluto_session")
     xs = _state.get("xtream_session")
-    if xs:
+    if ps or xs:
         caps = _state.get("captures", [])
         return jsonify({"captures": caps, "total": len(caps)})
     try:
@@ -1605,8 +1642,9 @@ def captures_list():
 @app.route("/api/captures/clear", methods=["POST", "DELETE"])
 def captures_clear():
     """Limpa todas as capturas do servidor (DEFENSE-CORE) ou do painel (Xtream)."""
+    ps = _state.get("pluto_session")
     xs = _state.get("xtream_session")
-    if xs:
+    if ps or xs:
         _state["captures"] = []
         return jsonify({"ok": True, "cleared": True})
     try:
@@ -1620,6 +1658,29 @@ def captures_clear():
 def capture_channel(channel_id):
     """Captura um canal (DRM -> KID:KEY simulada | FAST/Xtream -> link M3U) e registra alerta."""
     data = request.get_json(silent=True) or {}
+    ps = _state.get("pluto_session")
+    if ps:
+        c = pluto_adapter.channel_by_id(channel_id)
+        name = (c or {}).get("name") or data.get("name") or f"Canal {channel_id}"
+        url = (c or {}).get("stream_url") or ""
+        import datetime
+        cap = {
+            "type": "fast_m3u",
+            "channel": name,
+            "provider": "Pluto TV (API oficial)",
+            "kid_key": None,
+            "m3u_link": url,
+            "stream_url": url,
+            "captured_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _state.setdefault("captures", []).append(cap)
+        _add_alert(
+            "RULE-003", "Stream capturado / re-streaming",
+            f"Link HLS público do canal FAST '{name}' copiado da Pluto TV "
+            f"(catálogo gratuito sem DRM) - vetor de redistribuição.",
+            "ALTO",
+        )
+        return jsonify({"ok": True, "capture": cap})
     xs = _state.get("xtream_session")
     if xs:
         # Conexão Xtream: "capturar" = montar o link direto do canal (o mesmo
@@ -1684,6 +1745,17 @@ def auth_login():
     if server_override and "://" not in server_override:
         server_override = "http://" + server_override
     base = server_override or core_for_provider(data.get("provider"))
+
+    # ---- Provedor Pluto TV (API oficial pública, FAST, sem DRM) ----
+    if pluto_adapter.detect(base or ""):
+        p = pluto_adapter.login(base, username, (data.get("password") or ""))
+        if p.get("ok"):
+            _state["pluto_session"] = {"base": (base or "").rstrip("/")}
+            _state["connected_provider"] = "Pluto TV (API oficial)"
+            p["protocol"] = "Pluto TV (API oficial)"
+            return jsonify(p)
+        return jsonify(p), 503
+
     try:
         if server_override:
             # CONEXÃO ABERTA: sem fallback — conecta SÓ no endereço digitado,
