@@ -29,10 +29,12 @@ from flask import Flask, jsonify, render_template, request
 
 import xtream_adapter
 import pluto_adapter
+import panel_db
 
 app = Flask(__name__)
 
 CORE_URL = os.environ.get("CORE_URL", "").strip()
+panel_db.init_db()
 
 # ---------------------------------------------------------------------------
 # CONEXÃO ABERTA (zero apontamento prévio):
@@ -75,20 +77,8 @@ _PROVIDERS_CACHE = {"ts": 0.0, "data": []}
 
 
 def _get_providers():
-    """Lista viva de provedores (cache de 10s). Fonte: CORE_URL principal."""
-    now = time.time()
-    if now - _PROVIDERS_CACHE["ts"] < 10 and _PROVIDERS_CACHE["data"]:
-        return _PROVIDERS_CACHE["data"]
-    try:
-        r = requests.get(f"{CORE_URL}/api/providers", timeout=3)
-        if r.status_code == 200:
-            data = r.json().get("providers", [])
-            if data:
-                _PROVIDERS_CACHE["data"] = data
-                _PROVIDERS_CACHE["ts"] = now
-    except Exception:
-        pass
-    return _PROVIDERS_CACHE["data"]
+    """Lista de provedores cadastrados no BANCO LOCAL do painel."""
+    return panel_db.list_providers()
 
 
 def core_for_provider(provider_name):
@@ -375,6 +365,39 @@ _PROVIDER_CATALOG = {
             ("GloboNews", "Noticias"), ("Record News", "Noticias"),
         ],
     },
+    "SamsungTVPlus": {
+        "count": 100, "drm": "Sem DRM",
+        "seeds": [
+            ("Samsung News", "Noticias"), ("Samsung Movies", "Filmes & Series"),
+            ("Samsung Comedy", "Variedades"), ("Samsung Music", "Musica"),
+            ("Samsung Kids", "Infantis"), ("Samsung Sports", "Esportes"),
+            ("Cooking TV", "Variedades"), ("Travel Channel", "Variedades"),
+        ],
+    },
+    "RokuChannel": {
+        "count": 80, "drm": "Sem DRM",
+        "seeds": [
+            ("Roku Movies", "Filmes & Series"), ("Roku Series", "Filmes & Series"),
+            ("Roku Kids", "Infantis"), ("Roku News", "Noticias"),
+            ("Roku Comedy", "Variedades"), ("Roku Sports", "Esportes"),
+        ],
+    },
+    "PlexLive": {
+        "count": 60, "drm": "Sem DRM",
+        "seeds": [
+            ("Plex Movies", "Filmes & Series"), ("Plex TV", "Variedades"),
+            ("Plex News", "Noticias"), ("Plex Kids", "Infantis"),
+            ("Plex Sports", "Esportes"), ("Plex Music", "Musica"),
+        ],
+    },
+    "RedBullTV": {
+        "count": 20, "drm": "Sem DRM",
+        "seeds": [
+            ("Red Bull TV 1", "Esportes"), ("Red Bull TV 2", "Esportes"),
+            ("Red Bull Racing", "Esportes"), ("Red Bull Xtreme", "Esportes"),
+            ("Red Bull Music", "Musica"), ("Red Bull Films", "Filmes & Series"),
+        ],
+    },
 }
 
 # Mapa id -> nome de exibição
@@ -447,6 +470,10 @@ _PROVIDER_NAME_TO_CATALOG = {
     "Disney+": "DisneyPlus",
     "Paramount+": "ParamountPlus",
     "Claro TV+": "ClaroTV",
+    "Samsung TV Plus (simulado)": "SamsungTVPlus",
+    "Roku Channel (simulado)": "RokuChannel",
+    "Plex Live TV (simulado)": "PlexLive",
+    "Red Bull TV (simulado)": "RedBullTV",
 }
 
 
@@ -1580,41 +1607,25 @@ def auth_accounts_delete(username):
 
 @app.route("/api/providers")
 def providers_list():
-    """Lista provedores simulados do DEFENSE-CORE (fonte da verdade)."""
-    try:
-        r = requests.get(f"{CORE_URL}/api/providers", timeout=3)
-        return jsonify(r.json())
-    except Exception:
-        return jsonify({"providers": [], "error": "DEFENSE-CORE offline."})
+    """Lista provedores cadastrados no banco local do painel."""
+    return jsonify({"providers": panel_db.list_providers()})
 
 
 @app.route("/api/providers", methods=["POST"])
 def providers_create():
     data = request.get_json(silent=True) or {}
-    try:
-        r = requests.post(f"{CORE_URL}/api/providers", json=data, timeout=5)
-        return jsonify(r.json()), r.status_code
-    except Exception:
-        return jsonify({"ok": False, "error": "DEFENSE-CORE offline."}), 503
+    return jsonify(panel_db.create_provider(data)), 201
 
 
 @app.route("/api/providers/<pid>", methods=["PUT"])
 def providers_update(pid):
     data = request.get_json(silent=True) or {}
-    try:
-        r = requests.put(f"{CORE_URL}/api/providers/{pid}", json=data, timeout=5)
-        return jsonify(r.json()), r.status_code
-    except Exception:
-        return jsonify({"ok": False, "error": "DEFENSE-CORE offline."}), 503
+    return jsonify(panel_db.update_provider(pid, data))
 
 
 @app.route("/api/providers/<pid>", methods=["DELETE"])
 def providers_delete(pid):
-    try:
-        r = requests.delete(f"{CORE_URL}/api/providers/{pid}", timeout=5)
-        return jsonify(r.json()), r.status_code
-    except Exception:
-        return jsonify({"ok": False, "error": "DEFENSE-CORE offline."}), 503
+    return jsonify(panel_db.delete_provider(pid))
 
 
 @app.route("/api/captures")
