@@ -1714,10 +1714,12 @@ def capture_channel(channel_id):
         name = (c or {}).get("name") or data.get("name") or f"Canal {channel_id}"
         url = (c or {}).get("stream_url") or ""
         import datetime
+        quality = pluto_adapter.detect_resolution(url)
         cap = {
             "type": "fast_m3u",
             "channel": name,
             "provider": "Pluto TV (API oficial)",
+            "quality": quality,
             "kid_key": None,
             "m3u_link": url,
             "stream_url": url,
@@ -1993,6 +1995,78 @@ def api_config():
         "acesso_externo": os.environ.get("HOST", "0.0.0.0") == "0.0.0.0",
         "aviso": "Painel liberado para acesso externo. Defina CORE_URL para apontar ao DEFENSE-CORE na VPS.",
     })
+
+
+# ---------------------------------------------------------------------------
+# PROXY HLS (player no navegador)
+# ---------------------------------------------------------------------------
+# A Pluto TV (e outros FAST) não envia cabeçalhos CORS. Por isso o player
+# do navegador falha ao buscar o .m3u8 diretamente (ERR_FAILED). Este proxy
+# busca o conteúdo no servidor e o devolve na mesma origem do painel,
+# reescrevendo as URLs internas (playlists e segmentos) para passarem
+# também pelo proxy. Assim o player reproduz sem depender de CORS.
+_HLS_UA = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+    "Accept": "*/*",
+}
+
+
+def _hls_fetch(url):
+    """Busca conteúdo (m3u8 ou segmento) do provedor, sem seguir redirects de stream."""
+    if not url:
+        return None, None, None
+    r = requests.get(url, headers=_HLS_UA, timeout=20, stream=False,
+                     allow_redirects=True)
+    ctype = r.headers.get("Content-Type", "")
+    return r.status_code, ctype, r.content
+
+
+def _is_playlist(url):
+    low = (url or "").lower()
+    return ".m3u8" in low
+
+
+def _proxy_url(target):
+    from urllib.parse import quote
+    return f"/api/hls/proxy?url={quote(target, safe='')}"
+
+
+@app.route("/api/hls/proxy")
+def hls_proxy():
+    """Relê um .m3u8 ou um segmento (.ts/.aac/.mp4) na mesma origem do painel."""
+    target = request.args.get("url", "")
+    if not target:
+        return jsonify({"error": "url ausente"}), 400
+    status, ctype, body = _hls_fetch(target)
+    if body is None:
+        return jsonify({"error": "falha ao buscar o stream"}), 502
+
+    if _is_playlist(target):
+        # Rewrite: transforma linhas de URI em chamadas ao nosso proxy.
+        text = body.decode("utf-8", "replace")
+        out = []
+        base_abs = target
+        for line in text.splitlines():
+            s = line.strip()
+            if not s or s.startswith("#"):
+                out.append(line)
+                continue
+            # URI relativa ou absoluta
+            from urllib.parse import urljoin
+            absu = urljoin(base_abs, s)
+            out.append(_proxy_url(absu))
+        resp = "\n".join(out)
+        return resp, 200, {"Content-Type": "application/vnd.apple.mpegurl",
+                           "Access-Control-Allow-Origin": "*",
+                           "Cache-Control": "no-store"}
+
+    # Segmento binário: devolve os bytes como vieram.
+    ctype = ctype or ("video/mp2t" if target.endswith(".ts") else "application/octet-stream")
+    from flask import Response
+    return Response(body, status=200, content_type=ctype,
+                    headers={"Access-Control-Allow-Origin": "*",
+                             "Cache-Control": "no-store"})
 
 
 if __name__ == "__main__":

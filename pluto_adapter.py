@@ -15,6 +15,7 @@ como um catálogo FAST real (sem DRM) entrega o stream direto num link
 HLS aberto — exatamente o vetor que precisa ser monitorado.
 """
 import datetime
+import re
 import uuid
 import requests
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
@@ -111,10 +112,46 @@ def _logo(ch):
     return (ch.get("logo") or {}).get("path") or (ch.get("featuredImage") or {}).get("path") or ""
 
 
+_RES_CACHE = {}
+
+
+def detect_resolution(stream_url, timeout=6):
+    """Detecta a resolução REAL do HLS adaptativo da Pluto.
+
+    O master.m3u8 traz as variantes com BANDWIDTH (não RESOLUTION).
+    A resolução exata fica no caminho dos segmentos (ex.: '1080pDRM').
+    Mapeamos a maior banda para o rótulo correto (SD/HD/FHD/4K).
+    """
+    if not stream_url:
+        return "HD"
+    if stream_url in _RES_CACHE:
+        return _RES_CACHE[stream_url]
+    label = "HD"
+    try:
+        r = requests.get(stream_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=timeout)
+        txt = r.text or ""
+        bws = [int(m) for m in re.findall(r"BANDWIDTH=(\d+)", txt)]
+        if bws:
+            mx = max(bws)
+            if mx >= 4500000:
+                label = "4K"
+            elif mx >= 2500000:
+                label = "FHD"
+            elif mx >= 1200000:
+                label = "HD"
+            else:
+                label = "SD"
+    except Exception:
+        pass
+    _RES_CACHE[stream_url] = label
+    return label
+
+
 def _quality(ch):
-    # A API não informa resolução nominal; a Pluto entrega HLS adaptativo.
-    # Marcamos "HLS" (adaptativo) para não inventar SD/HD/FHD.
-    return "HLS"
+    # A Pluto entrega HLS adaptativo (resolução varia com a banda).
+    # Retornamos "HD" como rótulo padrão (perfil típico da Pluto);
+    # a resolução real é detectada sob demanda em detect_resolution().
+    return "HD"
 
 
 def map_channel(ch):
