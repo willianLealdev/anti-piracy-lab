@@ -29,6 +29,7 @@ from flask import Flask, jsonify, render_template, request
 
 import xtream_adapter
 import pluto_adapter
+import soultv_adapter
 import panel_db
 
 app = Flask(__name__)
@@ -982,6 +983,18 @@ def channels():
             "channels": chans,
             "protocol": "pluto",
         })
+    ss = _state.get("soultv_session")
+    if ss:
+        try:
+            chans = soultv_adapter.channels()
+        except Exception:
+            chans = []
+        return jsonify({
+            "total": len(chans),
+            "categories": sorted({c["category"] for c in chans}),
+            "channels": chans,
+            "protocol": "soultv",
+        })
     xs = _state.get("xtream_session")
     if xs:
         try:
@@ -1318,6 +1331,29 @@ def channels_m3u():
             "\n".join(lines), mimetype="audio/x-mpegurl",
             headers={"Content-Disposition": 'attachment; filename="pluto_tv.m3u"'},
         )
+    ss = _state.get("soultv_session")
+    if ss:
+        cid = (request.args.get("id") or "").strip()
+        if cid:
+            c = soultv_adapter.channel_by_id(cid)
+            name = (c or {}).get("name") or f"Canal {cid}"
+            url = (c or {}).get("stream_url") or ""
+            from flask import Response
+            m3u = f"#EXTM3U\n#EXTINF:-1,{name}\n{url}\n"
+            return Response(
+                m3u, mimetype="audio/x-mpegurl",
+                headers={"Content-Disposition": f'attachment; filename="{name.replace(chr(32), "_")[:60]}.m3u"'},
+            )
+        from flask import Response
+        chans = soultv_adapter.channels()
+        lines = ["#EXTM3U", f"# Soul TV Brasil (FAST) - {len(chans)} canais", ""]
+        for c in chans:
+            lines.append(f"#EXTINF:-1,{c['name']}")
+            lines.append(c["stream_url"] or "")
+        return Response(
+            "\n".join(lines), mimetype="audio/x-mpegurl",
+            headers={"Content-Disposition": 'attachment; filename="soul_tv.m3u"'},
+        )
     xs = _state.get("xtream_session")
     if xs:
         cid = (request.args.get("id") or "").strip()
@@ -1632,8 +1668,9 @@ def providers_delete(pid):
 def captures_list():
     """Lista as capturas (KID:KEY DRM simuladas + links M3U FAST) do banco."""
     ps = _state.get("pluto_session")
+    ss = _state.get("soultv_session")
     xs = _state.get("xtream_session")
-    if ps or xs:
+    if ps or ss or xs:
         caps = _state.get("captures", [])
         return jsonify({"captures": caps, "total": len(caps)})
     try:
@@ -1654,8 +1691,9 @@ def captures_list():
 def captures_clear():
     """Limpa todas as capturas do servidor (DEFENSE-CORE) ou do painel (Xtream)."""
     ps = _state.get("pluto_session")
+    ss = _state.get("soultv_session")
     xs = _state.get("xtream_session")
-    if ps or xs:
+    if ps or ss or xs:
         _state["captures"] = []
         return jsonify({"ok": True, "cleared": True})
     try:
@@ -1688,6 +1726,29 @@ def capture_channel(channel_id):
         _add_alert(
             "RULE-003", "Stream capturado / re-streaming",
             f"Link HLS público do canal FAST '{name}' copiado da Pluto TV "
+            f"(catálogo gratuito sem DRM) - vetor de redistribuição.",
+            "ALTO",
+        )
+        return jsonify({"ok": True, "capture": cap})
+    ss = _state.get("soultv_session")
+    if ss:
+        c = soultv_adapter.channel_by_id(channel_id)
+        name = (c or {}).get("name") or data.get("name") or f"Canal {channel_id}"
+        url = (c or {}).get("stream_url") or ""
+        import datetime
+        cap = {
+            "type": "fast_m3u",
+            "channel": name,
+            "provider": "Soul TV Brasil (FAST)",
+            "kid_key": None,
+            "m3u_link": url,
+            "stream_url": url,
+            "captured_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        _state.setdefault("captures", []).append(cap)
+        _add_alert(
+            "RULE-003", "Stream capturado / re-streaming",
+            f"Link HLS público do canal FAST '{name}' copiado da Soul TV "
             f"(catálogo gratuito sem DRM) - vetor de redistribuição.",
             "ALTO",
         )
@@ -1764,6 +1825,16 @@ def auth_login():
             _state["pluto_session"] = {"base": (base or "").rstrip("/")}
             _state["connected_provider"] = "Pluto TV (API oficial)"
             p["protocol"] = "Pluto TV (API oficial)"
+            return jsonify(p)
+        return jsonify(p), 503
+
+    # ---- Provedor Soul TV Brasil (FAST real, sem DRM) ----
+    if soultv_adapter.detect(base or ""):
+        p = soultv_adapter.login(base, username, (data.get("password") or ""))
+        if p.get("ok"):
+            _state["soultv_session"] = {"base": (base or "").rstrip("/")}
+            _state["connected_provider"] = "Soul TV Brasil (FAST)"
+            p["protocol"] = "Soul TV Brasil (FAST)"
             return jsonify(p)
         return jsonify(p), 503
 

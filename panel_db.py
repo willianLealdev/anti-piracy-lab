@@ -54,6 +54,11 @@ def _seed(c):
             "server": "https://api.pluto.tv", "protocol": "pluto",
         },
         {
+            "id": "soultv", "name": "Soul TV Brasil (FAST)", "drm": "Sem DRM (FAST)", "channels": "76",
+            "description": "Canais FAST nacionais reais. Site publico https://soultv.com.br - nao pede login.",
+            "server": "https://soultv.com.br", "protocol": "soultv",
+        },
+        {
             "id": "xtream", "name": "Xtream Codes (generico)", "drm": "A definir", "channels": "0",
             "description": "Painel IPTV Xtream Codes real do cliente. Digite IP/dominio no campo Servidor do login.",
             "server": "", "protocol": "xtream",
