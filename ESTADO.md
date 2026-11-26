@@ -83,3 +83,8 @@
 
 ## Estado atual
 - Login Xtream Codes agora retorna campos reais (canais/filmes/s?ries, playlist get.php, telas ativas/m?x, expira??o) e o painel recarrega canais automaticamente ap?s conectar. Auto-Flow usa dados reais do painel Xtream (n?o mais n?meros sint?ticos). Commit e9da3f6.
+
+## Pluto TV (API oficial) - 2026-11-25
+- Novo provedor: pluto_adapter.py usa GET https://api.pluto.tv/v2/channels (FAST, gratuito, sem DRM).
+- Login: digitar https://api.pluto.tv no campo Servidor (sem usuario/senha). Retorna 467 canais reais com link HLS publico.
+- Canais/captura/M3U integrados (pluto_session). Commit 312fed6.
